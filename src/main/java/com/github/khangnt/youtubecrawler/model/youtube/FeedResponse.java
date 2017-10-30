@@ -52,11 +52,13 @@ public class FeedResponse {
                 String result = safeGet(jsonObj, "result", "failed");
                 long timestamp = safeGet(jsonObj, "timestamp", 0).longValue();
                 if (RESULT_OK.equalsIgnoreCase(result)) {
-                    Feed feed = context.deserialize(jsonObj.get("content"), Feed.class);
-                    return new FeedResponse(result, timestamp, feed);
-                } else {
-                    return new FeedResponse(result, timestamp, null);
+                    JsonElement content = jsonObj.get("content");
+                    if (content instanceof JsonObject && ((JsonObject) content).size() > 0) {
+                        Feed feed = context.deserialize(content, Feed.class);
+                        return new FeedResponse(result, timestamp, feed);
+                    }
                 }
+                return new FeedResponse(result, timestamp, null);
             } else {
                 throw new JsonParseException("Invalid feed response");
             }
