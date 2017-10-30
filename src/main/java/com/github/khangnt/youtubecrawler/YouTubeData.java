@@ -1,5 +1,6 @@
 package com.github.khangnt.youtubecrawler;
 
+import com.github.khangnt.youtubecrawler.model.youtube.ArtistWatchCard;
 import com.github.khangnt.youtubecrawler.model.youtube.CompactChannel;
 import com.github.khangnt.youtubecrawler.model.youtube.CompactPlaylist;
 import com.github.khangnt.youtubecrawler.model.youtube.CompactRadio;
@@ -11,6 +12,8 @@ import com.github.khangnt.youtubecrawler.model.youtube.SectionList;
 import com.github.khangnt.youtubecrawler.model.youtube.Shelf;
 import com.github.khangnt.youtubecrawler.model.youtube.VerticalList;
 import com.github.khangnt.youtubecrawler.model.youtube.VideoWithContext;
+import com.github.khangnt.youtubecrawler.model.youtube.WatchCardAlbumList;
+import com.github.khangnt.youtubecrawler.model.youtube.WatchCardVideoList;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -62,6 +65,7 @@ public class YouTubeData {
         public Builder(OkHttpClient.Builder okHttpClientBuilder) {
             this.okHttpClientBuilder = okHttpClientBuilder.followRedirects(true);
             this.gsonBuilder = new GsonBuilder()
+                    .registerTypeAdapter(ArtistWatchCard.class, new ArtistWatchCard.TypeAdapter())
                     .registerTypeAdapter(CompactChannel.class, new CompactChannel.TypeAdapter())
                     .registerTypeAdapter(CompactPlaylist.class, new CompactPlaylist.TypeAdapter())
                     .registerTypeAdapter(CompactRadio.class, new CompactRadio.TypeAdapter())
@@ -73,6 +77,8 @@ public class YouTubeData {
                     .registerTypeAdapter(Shelf.class, new Shelf.TypeAdapter())
                     .registerTypeAdapter(VerticalList.class, new VerticalList.TypeAdapter())
                     .registerTypeAdapter(VideoWithContext.class, new VideoWithContext.TypeAdapter())
+                    .registerTypeAdapter(WatchCardAlbumList.class, new WatchCardAlbumList.TypeAdapter())
+                    .registerTypeAdapter(WatchCardVideoList.class, new WatchCardVideoList.TypeAdapter())
                     .setLenient();
         }
 

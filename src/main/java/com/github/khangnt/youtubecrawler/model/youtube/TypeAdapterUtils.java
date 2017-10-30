@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import rx.functions.Func1;
+
 /**
  * Created by Khang NT on 10/27/17.
  * Email: khang.neon.1997@gmail.com
@@ -32,6 +34,7 @@ class TypeAdapterUtils {
 
     static {
         ITEM_TYPE_MAP = new HashMap<>();
+        ITEM_TYPE_MAP.put(ArtistWatchCard.ITEM_TYPE, ArtistWatchCard.class);
         ITEM_TYPE_MAP.put(CompactChannel.ITEM_TYPE, CompactChannel.class);
         ITEM_TYPE_MAP.put(CompactPlaylist.ITEM_TYPE, CompactPlaylist.class);
         ITEM_TYPE_MAP.put(CompactRadio.ITEM_TYPE, CompactRadio.class);
@@ -41,6 +44,8 @@ class TypeAdapterUtils {
         ITEM_TYPE_MAP.put(Shelf.ITEM_TYPE, Shelf.class);
         ITEM_TYPE_MAP.put(VerticalList.ITEM_TYPE, VerticalList.class);
         ITEM_TYPE_MAP.put(VideoWithContext.ITEM_TYPE, VideoWithContext.class);
+        ITEM_TYPE_MAP.put(WatchCardAlbumList.ITEM_TYPE, WatchCardAlbumList.class);
+        ITEM_TYPE_MAP.put(WatchCardVideoList.ITEM_TYPE, WatchCardVideoList.class);
 
         BLACK_LIST_ITEM_TYPE = new HashSet<>();
         BLACK_LIST_ITEM_TYPE.add("promoted_video");
@@ -70,6 +75,14 @@ class TypeAdapterUtils {
             }
         }
         return contents;
+    }
+
+    static <T> List<T> parse(JsonArray elements, Func1<JsonElement, T> creator) {
+        List<T> result = new ArrayList<>();
+        for (JsonElement element : elements) {
+            result.add(creator.call(element));
+        }
+        return result;
     }
 
     static String parseFormattedString(JsonElement content) {
