@@ -33,6 +33,7 @@ class TypeAdapterUtils {
     static {
         ITEM_TYPE_MAP = new HashMap<>();
         ITEM_TYPE_MAP.put(CompactChannel.ITEM_TYPE, CompactChannel.class);
+        ITEM_TYPE_MAP.put(CompactPlaylist.ITEM_TYPE, CompactPlaylist.class);
         ITEM_TYPE_MAP.put(CompactRadio.ITEM_TYPE, CompactRadio.class);
         ITEM_TYPE_MAP.put(CompactVideo.ITEM_TYPE, CompactVideo.class);
         ITEM_TYPE_MAP.put(ItemSection.ITEM_TYPE, ItemSection.class);

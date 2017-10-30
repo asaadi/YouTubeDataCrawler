@@ -86,7 +86,6 @@ public class VideoWithContext extends Content {
     }
 
     public static final class TypeAdapter implements JsonDeserializer<VideoWithContext> {
-        private static final String LIVE_BADGE_TYPE = "live_badge";
 
         @Override
         public VideoWithContext deserialize(JsonElement json, Type typeOfT,
