@@ -125,6 +125,8 @@ public class YouTubeData {
                     .registerTypeAdapter(Feed.class, new Feed.TypeAdapter())
                     .registerTypeAdapter(FeedResponse.class, new FeedResponse.TypeAdapter())
                     .registerTypeAdapter(ItemSection.class, new ItemSection.TypeAdapter())
+                    .registerTypeAdapter(SearchResponse.class, new SearchResponse.TypeAdapter())
+                    .registerTypeAdapter(SearchResult.class, new SearchResult.TypeAdapter())
                     .registerTypeAdapter(SectionList.class, new SectionList.TypeAdapter())
                     .registerTypeAdapter(Shelf.class, new Shelf.TypeAdapter())
                     .registerTypeAdapter(VerticalList.class, new VerticalList.TypeAdapter())
