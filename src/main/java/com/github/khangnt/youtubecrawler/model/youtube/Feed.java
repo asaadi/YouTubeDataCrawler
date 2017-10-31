@@ -1,6 +1,5 @@
 package com.github.khangnt.youtubecrawler.model.youtube;
 
-import com.github.khangnt.youtubecrawler.Utils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -8,13 +7,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 
-import org.jetbrains.annotations.Nullable;
-
 import java.lang.reflect.Type;
 
-import okhttp3.HttpUrl;
-
-import static com.github.khangnt.youtubecrawler.internal.Preconditions.notNull;
 import static com.github.khangnt.youtubecrawler.model.youtube.TypeAdapterUtils.UNKNOWN_NAME;
 import static com.github.khangnt.youtubecrawler.model.youtube.TypeAdapterUtils.parse;
 import static com.github.khangnt.youtubecrawler.model.youtube.TypeAdapterUtils.safeGet;
@@ -27,12 +21,10 @@ import static com.github.khangnt.youtubecrawler.model.youtube.TypeAdapterUtils.s
 public class Feed {
     private String feedName;
     private Content content;
-    private String nextUrl;
 
-    public Feed(String feedName, Content content, @Nullable String nextUrl) {
+    public Feed(String feedName, Content content) {
         this.feedName = feedName;
         this.content = content;
-        this.nextUrl = nextUrl;
     }
 
     public String getFeedName() {
@@ -42,15 +34,6 @@ public class Feed {
     public Content getContent() {
         return content;
     }
-
-    /**
-     * @return Return url to fetch next page or NULL if this is the last page.
-     */
-    @Nullable
-    public String getNextUrl() {
-        return nextUrl;
-    }
-
 
     public static final class TypeAdapter implements JsonDeserializer<Feed> {
         private static final String SINGLE_COLUMN_BROWSE_RESULTS = "single_column_browse_results";
@@ -73,19 +56,7 @@ public class Feed {
                 } else {
                     throw new JsonParseException("Unknown feed structure: " + feedName);
                 }
-                String nextUrl = null;
-                if (content instanceof Continuation
-                        && ((Continuation) content).getContinuationToken() != null) {
-                    Continuation continuation = ((Continuation) content);
-                    nextUrl = safeGet(jsonObj, "next_url", (String) null);
-                    HttpUrl httpUrl = notNull(HttpUrl.parse(Utils.getYouTubeFullUrl(nextUrl)))
-                            .newBuilder()
-                            .setQueryParameter("ctoken", continuation.getContinuationToken())
-                            .setQueryParameter("itct", continuation.getClickTrackingParams())
-                            .build();
-                    nextUrl = httpUrl.toString();
-                }
-                return new Feed(feedName, content, nextUrl);
+                return new Feed(feedName, content);
             } else {
                 throw new JsonParseException("Invalid Feed structure");
             }

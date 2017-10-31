@@ -31,8 +31,14 @@ public class SearchResponse extends AbstractResponse {
     }
 
     @Override
-    public @Nullable String getNextUrl() {
-        return searchResult != null ? searchResult.getNextUrl() : null;
+    public boolean hasContinuation() {
+        return searchResult != null && searchResult.getContent() instanceof Continuation
+                && ((Continuation) searchResult.getContent()).getContinuationToken() != null;
+    }
+
+    @Override
+    public Continuation getContinuation() {
+        return hasContinuation() ? ((Continuation) searchResult.getContent()) : null;
     }
 
     public static final class TypeAdapter implements JsonDeserializer<SearchResponse> {

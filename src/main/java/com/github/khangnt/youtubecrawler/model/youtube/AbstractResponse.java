@@ -1,7 +1,5 @@
 package com.github.khangnt.youtubecrawler.model.youtube;
 
-import org.jetbrains.annotations.Nullable;
-
 /**
  * Created by Khang NT on 10/31/17.
  * Email: khang.neon.1997@gmail.com
@@ -26,7 +24,8 @@ public abstract class AbstractResponse {
         return timestamp;
     }
 
-    @Nullable
-    public abstract String getNextUrl();
+    public abstract boolean hasContinuation();
+
+    public abstract Continuation getContinuation();
 
 }

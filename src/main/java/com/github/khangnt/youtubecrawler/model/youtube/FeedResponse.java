@@ -31,8 +31,14 @@ public class FeedResponse extends AbstractResponse {
     }
 
     @Override
-    public @Nullable String getNextUrl() {
-        return feed != null ? feed.getNextUrl() : null;
+    public boolean hasContinuation() {
+        return feed != null && feed.getContent() instanceof Continuation
+                && ((Continuation) feed.getContent()).getContinuationToken() != null;
+    }
+
+    @Override
+    public Continuation getContinuation() {
+        return hasContinuation() ? ((Continuation) feed.getContent()) : null;
     }
 
     public static final class TypeAdapter implements JsonDeserializer<FeedResponse> {

@@ -1,6 +1,5 @@
 package com.github.khangnt.youtubecrawler;
 
-import com.github.khangnt.youtubecrawler.internal.Preconditions;
 import com.github.khangnt.youtubecrawler.model.ResponseData;
 import com.github.khangnt.youtubecrawler.model.youtube.AbstractResponse;
 import com.github.khangnt.youtubecrawler.model.youtube.ArtistWatchCard;
@@ -8,6 +7,7 @@ import com.github.khangnt.youtubecrawler.model.youtube.CompactChannel;
 import com.github.khangnt.youtubecrawler.model.youtube.CompactPlaylist;
 import com.github.khangnt.youtubecrawler.model.youtube.CompactRadio;
 import com.github.khangnt.youtubecrawler.model.youtube.CompactVideo;
+import com.github.khangnt.youtubecrawler.model.youtube.Continuation;
 import com.github.khangnt.youtubecrawler.model.youtube.Feed;
 import com.github.khangnt.youtubecrawler.model.youtube.FeedResponse;
 import com.github.khangnt.youtubecrawler.model.youtube.ItemSection;
@@ -35,10 +35,11 @@ import okhttp3.Request;
 import rx.Observable;
 
 import static com.github.khangnt.youtubecrawler.Utils.addDefaultWebPageReqHeader;
-import static com.github.khangnt.youtubecrawler.Utils.parseWindowSettings;
 import static com.github.khangnt.youtubecrawler.Utils.parseAjaxResponse;
+import static com.github.khangnt.youtubecrawler.Utils.parseWindowSettings;
 import static com.github.khangnt.youtubecrawler.Utils.rx;
 import static com.github.khangnt.youtubecrawler.Utils.string;
+import static com.github.khangnt.youtubecrawler.internal.Preconditions.notNull;
 
 /**
  * Created by khangnt on 10/24/17.
@@ -51,6 +52,9 @@ public class YouTubeData {
     private static final String SEARCH_RESULT_PAGE_URL = "https://m.youtube.com/results"; // ?search_query=...
     private static final String SEARCH_RESULT_AJAX_URL = "https://m.youtube.com/results?ajax=1&layout=tablet&utcoffset=" + C.UTC_OFFSET;
     private static final String SEARCH_QUERY = "search_query";
+    private static final String ACTION_CONTINUATION_PARAM = "action_continuation";
+    private static final String CLICK_TRACKING_PARAM = "itct";
+    private static final String CONTINUATION_TOKEN_PARAM = "ctoken";
 
     private OkHttpClient okHttpClient;
     private Gson gson;
@@ -84,10 +88,10 @@ public class YouTubeData {
     }
 
     public Observable<ResponseData<SearchResponse>> search(String query) {
-        String searchResultPageUrl = Preconditions.notNull(HttpUrl.parse(SEARCH_RESULT_PAGE_URL))
+        String searchResultPageUrl = notNull(HttpUrl.parse(SEARCH_RESULT_PAGE_URL))
                 .newBuilder().setQueryParameter(SEARCH_QUERY, query)
                 .build().toString();
-        String searchResultAjaxUrl = Preconditions.notNull(HttpUrl.parse(SEARCH_RESULT_AJAX_URL))
+        String searchResultAjaxUrl = notNull(HttpUrl.parse(SEARCH_RESULT_AJAX_URL))
                 .newBuilder().setQueryParameter(SEARCH_QUERY, query)
                 .build().toString();
         return getWindowSettings(searchResultPageUrl)
@@ -104,19 +108,24 @@ public class YouTubeData {
     }
 
     private <T extends AbstractResponse> Observable<ResponseData<T>> handleAjaxRequest(
-            String url, String referer, WindowSettings windowSettings, Class<T> tClass) {
-        Request request = Utils.createAjaxRequest(url, referer, windowSettings);
+            String ajaxUrl, String referer, WindowSettings windowSettings, Class<T> tClass) {
+        Request request = Utils.createAjaxRequest(ajaxUrl, referer, windowSettings);
         return rx(getOkHttpClient().newCall(request))
                 .to(string())
                 .map(parseAjaxResponse(getGson(), tClass))
-                .map(response -> createResponseData(response, referer, windowSettings, tClass));
+                .map(response -> createResponseData(response, ajaxUrl, referer, windowSettings, tClass));
     }
 
     private <T extends AbstractResponse> ResponseData<T> createResponseData(
-            T response, String referer, WindowSettings windowSettings, Class<T> tClass) {
-        if (response.isSuccess() && response.getNextUrl() != null) {
-            String nextUrl = response.getNextUrl();
-            return new ResponseData<>(response, handleAjaxRequest(nextUrl, referer, windowSettings, tClass));
+            T response, String ajaxUrl, String referer, WindowSettings windowSettings, Class<T> tClass) {
+        if (response.isSuccess() && response.hasContinuation()) {
+            Continuation continuation = response.getContinuation();
+            HttpUrl nextUrl = notNull(HttpUrl.parse(ajaxUrl)).newBuilder()
+                    .setQueryParameter(ACTION_CONTINUATION_PARAM, "1")
+                    .setQueryParameter(CONTINUATION_TOKEN_PARAM, continuation.getContinuationToken())
+                    .setQueryParameter(CLICK_TRACKING_PARAM, continuation.getClickTrackingParams())
+                    .build();
+            return new ResponseData<>(response, handleAjaxRequest(nextUrl.toString(), referer, windowSettings, tClass));
         } else {
             return new ResponseData<>(response, null);
         }

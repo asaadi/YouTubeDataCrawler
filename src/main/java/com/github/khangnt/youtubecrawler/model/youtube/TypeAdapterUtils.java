@@ -55,6 +55,7 @@ class TypeAdapterUtils {
     @Nullable
     static Content parse(JsonObject jsonObj,
                          JsonDeserializationContext context) throws JsonParseException {
+        if (jsonObj == null) return null;
         String itemType = safeGet(jsonObj, KEY_ITEM_TYPE, "");
         if (BLACK_LIST_ITEM_TYPE.contains(itemType)) {
             return null;

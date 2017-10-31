@@ -1,6 +1,5 @@
 package com.github.khangnt.youtubecrawler.model.youtube;
 
-import com.github.khangnt.youtubecrawler.C;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -21,12 +20,10 @@ import static com.github.khangnt.youtubecrawler.model.youtube.TypeAdapterUtils.s
 public class SearchResult {
     private Content content;
     private String searchType;
-    private @Nullable String nextUrl;
 
-    public SearchResult(Content content, String searchType, @Nullable String nextUrl) {
+    public SearchResult(Content content, String searchType) {
         this.content = content;
         this.searchType = searchType;
-        this.nextUrl = nextUrl;
     }
 
     public Content getContent() {
@@ -36,10 +33,6 @@ public class SearchResult {
     @Nullable
     public String getSearchType() {
         return searchType;
-    }
-
-    public @Nullable String getNextUrl() {
-        return nextUrl;
     }
 
     public static final class TypeAdapter implements JsonDeserializer<SearchResult> {
@@ -58,17 +51,7 @@ public class SearchResult {
                 } else if (jsonObj.has(CONTINUATION_CONTENTS)) {
                     content = TypeAdapterUtils.parse(jsonObj.getAsJsonObject(CONTINUATION_CONTENTS), context);
                 }
-
-                String nextUrl = null;
-                if (content instanceof Continuation
-                        && ((Continuation) content).getContinuationToken() != null) {
-                    Continuation continuation = ((Continuation) content);
-                    nextUrl = "https://m.youtube.com/results?ajax=1&action_continuation=1&layout=tablet" +
-                            "&ctoken=" + continuation.getContinuationToken() +
-                            "&itct=" + continuation.getClickTrackingParams() +
-                            "&utcoffset=" + C.UTC_OFFSET;
-                }
-                return new SearchResult(content, searchType, nextUrl);
+                return new SearchResult(content, searchType);
             } else {
                 throw new JsonParseException("Invalid SearchResult structure");
             }
