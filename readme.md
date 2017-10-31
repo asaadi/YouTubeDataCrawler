@@ -14,9 +14,9 @@ this, just set cookie via OkHttp's [CookieJar](https://square.github.io/okhttp/3
 | [x] | Trending feed | `/feed/trending` |
 | [x] | Search result | `/results?search_query=xxx` |
 | [x] | Channel home | `/channel/xx_channel_id_xx/featured` |
-| [ ] | Channel's videos | `/channel/xx_channel_id_xx/videos` |
-| [ ] | Channel's playlists | `/channel/xx_channel_id_xx/playlists` |
-| [ ] | Channel's channels | `/channel/xx_channel_id_xx/channels` |
+| [x] | Channel's videos | `/channel/xx_channel_id_xx/videos` |
+| [x] | Channel's playlists | `/channel/xx_channel_id_xx/playlists` |
+| [x] | Channel's channels | `/channel/xx_channel_id_xx/channels` |
 | [ ] | Playlist | `/playlist?list=xx_playlist_id_xx` |
 | [ ] | Watching video | `/watch?v=xx_video_id_xx` |
 | [ ] | Watching playlist | `/watch?v=xx_video_id_xx&list=xx_playlist_id_xx` |

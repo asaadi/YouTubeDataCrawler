@@ -106,8 +106,9 @@ public class YouTubeData {
                         windowSettings, SearchResponse.class));
     }
 
-    public Observable<ResponseData<ChannelResponse>> channelHome(String channelId) {
-        String channelHomePageUrl = CHANNEL_HOME_PAGE_URL + "/" + channelId;
+    public Observable<ResponseData<ChannelResponse>> channel(String channelId, ChannelTab channelTab) {
+        String channelHomePageUrl = CHANNEL_HOME_PAGE_URL + "/" + channelId
+                + channelTab.getLastPathSegment();
         String ajaxUrl = notNull(HttpUrl.parse(channelHomePageUrl)).newBuilder()
                 .setQueryParameter(AJAX_PARAM, "1")
                 .setQueryParameter(LAYOUT_PARAM, "tablet")
