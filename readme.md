@@ -13,7 +13,7 @@ this, just set cookie via OkHttp's [CookieJar](https://square.github.io/okhttp/3
 | [x] | Home feed | `/` |
 | [x] | Trending feed | `/feed/trending` |
 | [x] | Search result | `/results?search_query=xxx` |
-| [ ] | Channel home | `/channel/xx_channel_id_xx/featured` |
+| [x] | Channel home | `/channel/xx_channel_id_xx/featured` |
 | [ ] | Channel's videos | `/channel/xx_channel_id_xx/videos` |
 | [ ] | Channel's playlists | `/channel/xx_channel_id_xx/playlists` |
 | [ ] | Channel's channels | `/channel/xx_channel_id_xx/channels` |

@@ -54,9 +54,14 @@ public class YouTubeData {
     private static final String SEARCH_RESULT_PAGE_URL = "https://m.youtube.com/results"; // ?search_query=...
     private static final String SEARCH_RESULT_AJAX_URL = "https://m.youtube.com/results?ajax=1&layout=tablet&utcoffset=" + C.UTC_OFFSET;
     private static final String SEARCH_QUERY = "search_query";
+    private static final String CHANNEL_HOME_PAGE_URL = "https://m.youtube.com/channel"; // /channel_id
+
     private static final String ACTION_CONTINUATION_PARAM = "action_continuation";
     private static final String CLICK_TRACKING_PARAM = "itct";
     private static final String CONTINUATION_TOKEN_PARAM = "ctoken";
+    private static final String AJAX_PARAM = "ajax";
+    private static final String LAYOUT_PARAM = "layout";
+    private static final String UTC_OFFSET_PARAM = "utcoffset";
 
     private OkHttpClient okHttpClient;
     private Gson gson;
@@ -99,6 +104,18 @@ public class YouTubeData {
         return getWindowSettings(searchResultPageUrl)
                 .flatMap(windowSettings -> handleAjaxRequest(searchResultAjaxUrl, searchResultPageUrl,
                         windowSettings, SearchResponse.class));
+    }
+
+    public Observable<ResponseData<ChannelResponse>> channelHome(String channelId) {
+        String channelHomePageUrl = CHANNEL_HOME_PAGE_URL + "/" + channelId;
+        String ajaxUrl = notNull(HttpUrl.parse(channelHomePageUrl)).newBuilder()
+                .setQueryParameter(AJAX_PARAM, "1")
+                .setQueryParameter(LAYOUT_PARAM, "tablet")
+                .setQueryParameter(UTC_OFFSET_PARAM, String.valueOf(C.UTC_OFFSET))
+                .build().toString();
+        return getWindowSettings(channelHomePageUrl)
+                .flatMap(windowSettings -> handleAjaxRequest(ajaxUrl, channelHomePageUrl,
+                        windowSettings, ChannelResponse.class));
     }
 
     private Observable<WindowSettings> getWindowSettings(String webPageUrl) {
