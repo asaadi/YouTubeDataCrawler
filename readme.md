@@ -1,32 +1,29 @@
 ## YouTube Data Crawler - Java/Android
 
-This is a pure Java library helps crawl data from YouTube without using YouTube Data API. The library will warranty
-compatible Java 7+ **and** Android SDK 16+.
+This is Java library that helps to get YouTube Data without using YouTube Data API, the result is
+whatever about Video, Channel, Playlist display on various YouTube endpoint.
 
-## What you can crawl?
-This library try to crawl information of `Playlist`, `Video`, `Channel` (, and user private data in future).
-Feature checklist:
-  - YouTube home: `/`
-    + [ ] Recommended channel section: `ChannelBasic` + recommended `List<VideoBasic>` of this channel
-    + [ ] Recommended playlist: `PlaylistBasic` + recommended `List<VideoBasic>` of this playlist
-    + [ ] Youtube Mixes: `List<PlaylistBasic>` YouTube mixed playlist list
-  - Feed trending: `/feed/trending`
-    + [ ] `List<Video>` display on trending page
-  - Watching video: `/watch?v=video_id`
-    + [ ] `Video`: Full information of video
-    + [ ] `List<VideoBasic>`: List related videos
-  - Watching playlist: `/watch?v=video_id&list=playlist_id`
-    + [ ] `Video`: full information of current playing video
-    + [ ] `List<BasicVideo>`: List related videos of current playing video
-    + [ ] `List<BasicVideo>`: List video of playlist (maximum 200 video)
-  - Playlist: `/playlist?list=playlist_id`
-    + [ ] `Playlist`: information of the playlist
-    + [ ] `List<BasicVideo>`: List all videos of the playlist
-  - Channel Home: `/user/user_id[/featured]` or `/channel/channel_id[/featured]`
+It also can get private data such as private mixes playlist, account's playlist,... To accomplish
+this, just set cookie via OkHttp's [CookieJar](https://square.github.io/okhttp/3.x/okhttp/okhttp3/CookieJar.html) implementation.
 
-TODO: Update read me
+## What it can crawl?
+
+| Status | Page | Endpoint |
+|:------:|:----:|:--------|
+| [x] | Home feed | `/` |
+| [x] | Trending feed | `/feed/trending` |
+| [x] | Search result | `/results?search_query=xxx` |
+| [ ] | Channel home | `/channel/xx_channel_id_xx/featured` |
+| [ ] | Channel's videos | `/channel/xx_channel_id_xx/videos` |
+| [ ] | Channel's playlists | `/channel/xx_channel_id_xx/playlists` |
+| [ ] | Channel's channels | `/channel/xx_channel_id_xx/channels` |
+| [ ] | Playlist | `/playlist?list=xx_playlist_id_xx` |
+| [ ] | Watching video | `/watch?v=xx_video_id_xx` |
+| [ ] | Watching playlist | `/watch?v=xx_video_id_xx&list=xx_playlist_id_xx` |
 
 ## Dependencies
 
-- RxJava 1 (will upgrade to RxJava 2 soon)
-- OkHttpClient
+ - [OkHttp](https://github.com/square/okhttp)
+ - [Gson](https://github.com/google/gson)
+ - [RxJava1](https://github.com/ReactiveX/RxJava/tree/1.x)
+
