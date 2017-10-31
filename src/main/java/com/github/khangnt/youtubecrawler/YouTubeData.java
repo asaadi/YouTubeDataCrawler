@@ -1,5 +1,6 @@
 package com.github.khangnt.youtubecrawler;
 
+import com.github.khangnt.youtubecrawler.internal.Preconditions;
 import com.github.khangnt.youtubecrawler.model.ResponseData;
 import com.github.khangnt.youtubecrawler.model.youtube.AbstractResponse;
 import com.github.khangnt.youtubecrawler.model.youtube.ArtistWatchCard;
@@ -10,6 +11,8 @@ import com.github.khangnt.youtubecrawler.model.youtube.CompactVideo;
 import com.github.khangnt.youtubecrawler.model.youtube.Feed;
 import com.github.khangnt.youtubecrawler.model.youtube.FeedResponse;
 import com.github.khangnt.youtubecrawler.model.youtube.ItemSection;
+import com.github.khangnt.youtubecrawler.model.youtube.SearchResponse;
+import com.github.khangnt.youtubecrawler.model.youtube.SearchResult;
 import com.github.khangnt.youtubecrawler.model.youtube.SectionList;
 import com.github.khangnt.youtubecrawler.model.youtube.Shelf;
 import com.github.khangnt.youtubecrawler.model.youtube.VerticalList;
@@ -25,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 import okhttp3.Cache;
 import okhttp3.CookieJar;
+import okhttp3.HttpUrl;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -44,6 +48,9 @@ public class YouTubeData {
     private static final String HOME_FEED_ENTRY_URL = "https://m.youtube.com/feed?ajax=1&layout=tablet&tsp=1&utcoffset=" + C.UTC_OFFSET;
     private static final String TRENDING_PAGE_URL = "https://m.youtube.com/feed/trending";
     private static final String TRENDING_FEED_ENTRY_URL = "https://m.youtube.com/feed/trending?ajax=1&&layout=tablet&tsp=1&utcoffset=" + C.UTC_OFFSET;
+    private static final String SEARCH_RESULT_PAGE_URL = "https://m.youtube.com/results"; // ?search_query=...
+    private static final String SEARCH_RESULT_AJAX_URL = "https://m.youtube.com/results?ajax=1&layout=tablet&utcoffset=" + C.UTC_OFFSET;
+    private static final String SEARCH_QUERY = "search_query";
 
     private OkHttpClient okHttpClient;
     private Gson gson;
@@ -54,11 +61,11 @@ public class YouTubeData {
     }
 
 
-    OkHttpClient getOkHttpClient() {
+    public OkHttpClient getOkHttpClient() {
         return okHttpClient;
     }
 
-    Gson getGson() {
+    public Gson getGson() {
         return gson;
     }
 
@@ -74,6 +81,18 @@ public class YouTubeData {
                 .flatMap(windowSettings -> handleAjaxRequest(TRENDING_FEED_ENTRY_URL,
                         TRENDING_PAGE_URL, windowSettings, FeedResponse.class));
 
+    }
+
+    public Observable<ResponseData<SearchResponse>> search(String query) {
+        String searchResultPageUrl = Preconditions.notNull(HttpUrl.parse(SEARCH_RESULT_PAGE_URL))
+                .newBuilder().setQueryParameter(SEARCH_QUERY, query)
+                .build().toString();
+        String searchResultAjaxUrl = Preconditions.notNull(HttpUrl.parse(SEARCH_RESULT_AJAX_URL))
+                .newBuilder().setQueryParameter(SEARCH_QUERY, query)
+                .build().toString();
+        return getWindowSettings(searchResultPageUrl)
+                .flatMap(windowSettings -> handleAjaxRequest(searchResultAjaxUrl, searchResultPageUrl,
+                        windowSettings, SearchResponse.class));
     }
 
     private Observable<WindowSettings> getWindowSettings(String webPageUrl) {
