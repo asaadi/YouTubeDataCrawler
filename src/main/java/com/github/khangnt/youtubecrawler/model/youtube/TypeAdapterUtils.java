@@ -26,6 +26,7 @@ import rx.functions.Func1;
 class TypeAdapterUtils {
     static final String UNKNOWN_NAME = "Unknown";
     static final String KEY_ITEM_TYPE = "item_type";
+    static final String NEXT_CONTINUATION_DATA_TYPE = "next_continuation_data";
 
     private static final Map<String, Class<? extends Content>> ITEM_TYPE_MAP;
     private static final Set<String> BLACK_LIST_ITEM_TYPE;

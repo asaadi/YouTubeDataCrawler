@@ -13,6 +13,7 @@ import java.lang.reflect.Type;
 import java.util.List;
 
 import static com.github.khangnt.youtubecrawler.model.youtube.TypeAdapterUtils.KEY_ITEM_TYPE;
+import static com.github.khangnt.youtubecrawler.model.youtube.TypeAdapterUtils.NEXT_CONTINUATION_DATA_TYPE;
 import static com.github.khangnt.youtubecrawler.model.youtube.TypeAdapterUtils.parse;
 import static com.github.khangnt.youtubecrawler.model.youtube.TypeAdapterUtils.safeGet;
 
@@ -46,7 +47,6 @@ public class SectionList extends MultipleItemContent implements Continuation {
     }
 
     public static final class TypeAdapter implements JsonDeserializer<SectionList> {
-        private static final String NEXT_CONTINUATION_DATA_TYPE = "next_continuation_data";
 
         @Override
         public SectionList deserialize(JsonElement json, Type typeOfT,

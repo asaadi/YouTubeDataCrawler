@@ -88,16 +88,17 @@ public class Utils {
         };
     }
 
-    static <T> Func1<String, T> parseXhrResponse(Gson gson, Class<T> tClass) {
-        return xhrResponse -> {
-            int offset = xhrResponse.indexOf("{");
-            xhrResponse = xhrResponse.substring(offset)
+    static <T> Func1<String, T> parseAjaxResponse(Gson gson, Class<T> tClass) {
+        return ajaxRes -> {
+            int offset = ajaxRes.indexOf("{");
+            // todo: handle utf-32 unescape
+            ajaxRes = ajaxRes.substring(offset)
                     .replaceAll("(\\\\U[a-f0-9A-F]{8})", "");
-            return gson.fromJson(xhrResponse, tClass);
+            return gson.fromJson(ajaxRes, tClass);
         };
     }
 
-    static Request createXhrRequest(String url, String referer, WindowSettings windowSettings) {
+    static Request createAjaxRequest(String url, String referer, WindowSettings windowSettings) {
         url = getYouTubeFullUrl(url);
         Request.Builder requestBuilder = new Request.Builder().url(url)
                 .addHeader(HTTP_ACCEPT, "*/*")

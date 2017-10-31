@@ -17,29 +17,22 @@ import static com.github.khangnt.youtubecrawler.model.youtube.TypeAdapterUtils.s
  * Email: khang.neon.1997@gmail.com
  */
 
-public class FeedResponse {
-    private static final String RESULT_OK = "ok";
-    private String result;
-    private long timestamp;
+public class FeedResponse extends AbstractResponse {
     private Feed feed;
 
     public FeedResponse(String result, long timestamp, Feed feed) {
-        this.result = result;
-        this.timestamp = timestamp;
+        super(result, timestamp);
         this.feed = feed;
-    }
-
-    public boolean isSuccess() {
-        return RESULT_OK.equalsIgnoreCase(result);
-    }
-
-    public long getTimestamp() {
-        return timestamp;
     }
 
     @Nullable
     public Feed getFeed() {
         return feed;
+    }
+
+    @Override
+    public @Nullable String getNextUrl() {
+        return feed != null ? feed.getNextUrl() : null;
     }
 
     public static final class TypeAdapter implements JsonDeserializer<FeedResponse> {
