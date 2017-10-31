@@ -3,6 +3,8 @@ package com.github.khangnt.youtubecrawler;
 import com.github.khangnt.youtubecrawler.model.ResponseData;
 import com.github.khangnt.youtubecrawler.model.youtube.AbstractResponse;
 import com.github.khangnt.youtubecrawler.model.youtube.ArtistWatchCard;
+import com.github.khangnt.youtubecrawler.model.youtube.Channel;
+import com.github.khangnt.youtubecrawler.model.youtube.ChannelResponse;
 import com.github.khangnt.youtubecrawler.model.youtube.CompactChannel;
 import com.github.khangnt.youtubecrawler.model.youtube.CompactPlaylist;
 import com.github.khangnt.youtubecrawler.model.youtube.CompactRadio;
@@ -146,6 +148,8 @@ public class YouTubeData {
             this.okHttpClientBuilder = okHttpClientBuilder.followRedirects(true);
             this.gsonBuilder = new GsonBuilder()
                     .registerTypeAdapter(ArtistWatchCard.class, new ArtistWatchCard.TypeAdapter())
+                    .registerTypeAdapter(Channel.class, new Channel.TypeAdapter())
+                    .registerTypeAdapter(ChannelResponse.class, new ChannelResponse.TypeAdapter())
                     .registerTypeAdapter(CompactChannel.class, new CompactChannel.TypeAdapter())
                     .registerTypeAdapter(CompactPlaylist.class, new CompactPlaylist.TypeAdapter())
                     .registerTypeAdapter(CompactRadio.class, new CompactRadio.TypeAdapter())
