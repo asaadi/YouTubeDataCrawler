@@ -14,20 +14,14 @@ import com.github.khangnt.youtubecrawler.model.youtube.format.YouTubeFormat;
 public class YouTubeStream {
     public static final long UNKOWN_TIME = -1;
 
-    private String videoId; // reference to video contains this stream
     private String url;
     private long expireAt;
     private YouTubeFormat youTubeFormat;
 
-    protected YouTubeStream(String videoId, String url, long expireAt, YouTubeFormat format) {
-        this.videoId = videoId;
+    protected YouTubeStream(String url, long expireAt, YouTubeFormat format) {
         this.youTubeFormat = format;
         this.url = url;
         this.expireAt = expireAt;
-    }
-
-    public String getVideoId() {
-        return videoId;
     }
 
     public YouTubeFormat getYouTubeFormat() {
@@ -61,8 +55,7 @@ public class YouTubeStream {
     @Override
     public String toString() {
         return "YouTubeStream{" +
-                "videoId='" + videoId + '\'' +
-                ", url='" + url + '\'' +
+                "url='" + url + '\'' +
                 ", expireAt=" + expireAt +
                 ", youTubeFormat=" + youTubeFormat +
                 '}';
