@@ -5,6 +5,9 @@ import com.github.khangnt.youtubecrawler.exception.RegexMismatchException;
 import com.github.khangnt.youtubecrawler.model.youtube.WindowSettings;
 import com.google.gson.Gson;
 
+import org.jetbrains.annotations.Nullable;
+
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -22,6 +25,7 @@ import rx.Observable;
 import rx.functions.Func1;
 
 import static com.github.khangnt.youtubecrawler.internal.Headers.HTTP_ACCEPT;
+import static com.github.khangnt.youtubecrawler.internal.Headers.HTTP_ACCEPT_CHARSET;
 import static com.github.khangnt.youtubecrawler.internal.Headers.HTTP_ACCEPT_LANGUAGE;
 import static com.github.khangnt.youtubecrawler.internal.Headers.HTTP_REFERER;
 import static com.github.khangnt.youtubecrawler.internal.Headers.HTTP_USER_AGENT;
@@ -51,7 +55,16 @@ public class Utils {
         return new Request.Builder().url(url)
                 .addHeader(HTTP_ACCEPT, C.BROWSER_ACCEPT)
                 .addHeader(HTTP_ACCEPT_LANGUAGE, C.BROWSER_ACCEPT_LANGUAGE)
+                .addHeader(HTTP_ACCEPT_CHARSET, C.BROWSER_ACCEPT_CHARSET)
                 .addHeader(HTTP_USER_AGENT, C.MOBILE_BROWSER_USER_AGENT);
+    }
+
+    public static Request.Builder desktopWebPageDownloadRequestBuilder(String url) {
+        return new Request.Builder().url(url)
+                .addHeader(HTTP_ACCEPT, C.BROWSER_ACCEPT)
+                .addHeader(HTTP_ACCEPT_LANGUAGE, C.BROWSER_ACCEPT_LANGUAGE)
+                .addHeader(HTTP_ACCEPT_CHARSET, C.BROWSER_ACCEPT_CHARSET)
+                .addHeader(HTTP_USER_AGENT, C.DESKTOP_BROWSER_USER_AGENT);
     }
 
     public static Observable<Response> rx(Call call) {
@@ -79,7 +92,7 @@ public class Utils {
             } catch (IOException e) {
                 return Observable.error(e);
             } finally {
-                response.close();
+                closeQuietly(response);
             }
         });
     }
@@ -97,12 +110,30 @@ public class Utils {
         };
     }
 
+    private static byte[] intToByteArray(int value) {
+        return new byte[] {
+                (byte)(value >>> 24),
+                (byte)(value >>> 16),
+                (byte)(value >>> 8),
+                (byte)value};
+    }
+
+    // unescape all \U0001F629 to 😩
+    public static String unescapeUtf32(String source) {
+        return RegexUtils.sub("\\\\U[0-9a-fA-F]{8}", matcher -> {
+            String hex = matcher.group(0).replace("\\U", "0x");
+            try {
+                return new String(intToByteArray(Integer.decode(hex)), "utf-32");
+            } catch (UnsupportedEncodingException e) {
+                return "";
+            }
+        }, source);
+    }
+
     public static <T> Func1<String, T> parseAjaxResponse(Gson gson, Class<T> tClass) {
         return ajaxRes -> {
             int offset = ajaxRes.indexOf("{");
-            // todo: handle utf-32 unescape
-            ajaxRes = ajaxRes.substring(offset)
-                    .replaceAll("(\\\\U[a-f0-9A-F]{8})", "");
+            ajaxRes = unescapeUtf32(ajaxRes.substring(offset));
             return gson.fromJson(ajaxRes, tClass);
         };
     }
@@ -110,8 +141,9 @@ public class Utils {
     public static Request createAjaxRequest(String url, String referer, WindowSettings windowSettings) {
         url = getYouTubeFullUrl(url);
         Request.Builder requestBuilder = new Request.Builder().url(url)
-                .addHeader(HTTP_ACCEPT, "*/*")
+                .addHeader(HTTP_ACCEPT, C.BROWSER_ACCEPT)
                 .addHeader(HTTP_REFERER, referer)
+                .addHeader(HTTP_ACCEPT_CHARSET, C.BROWSER_ACCEPT_CHARSET)
                 .addHeader(HTTP_ACCEPT_LANGUAGE, C.BROWSER_ACCEPT_LANGUAGE)
                 .addHeader(HTTP_USER_AGENT, C.MOBILE_BROWSER_USER_AGENT);
         Utils.addXYouTubeHeader(requestBuilder, windowSettings);
@@ -143,5 +175,12 @@ public class Utils {
         return queryPairs;
     }
 
-
+    public static void closeQuietly(@Nullable Closeable closeable) {
+        try {
+            if (closeable != null) {
+                closeable.close();
+            }
+        } catch (Throwable ignore) {
+        }
+    }
 }

@@ -8,6 +8,7 @@ package com.github.khangnt.youtubecrawler.internal;
 class Headers {
     static String HTTP_ACCEPT = "accept";
     static String HTTP_ACCEPT_LANGUAGE = "accept-language";
+    static String HTTP_ACCEPT_CHARSET = "accept-charset";
     static String HTTP_USER_AGENT = "user-agent";
     static String HTTP_REFERER = "referer";
 

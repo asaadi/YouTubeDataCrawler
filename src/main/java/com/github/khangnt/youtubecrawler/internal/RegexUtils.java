@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import rx.functions.Func1;
+
 /**
  * Created by Khang NT on 11/8/17.
  * Email: khang.neon.1997@gmail.com
@@ -24,5 +26,19 @@ public class RegexUtils {
             throw new RegexMismatchException(fatalMessage);
         }
         return matcher;
+    }
+
+    public static String sub(String regex, String replacement, String source) {
+        return Pattern.compile(regex).matcher(source).replaceAll(replacement);
+    }
+
+    public static String sub(String regex, Func1<Matcher, String> replaceEvaluation, String source) {
+        Matcher matcher = Pattern.compile(regex).matcher(source);
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            matcher.appendReplacement(sb, replaceEvaluation.call(matcher));
+        }
+        matcher.appendTail(sb);
+        return sb.toString();
     }
 }
