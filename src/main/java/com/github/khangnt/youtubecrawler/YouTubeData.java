@@ -1,5 +1,7 @@
 package com.github.khangnt.youtubecrawler;
 
+import com.github.khangnt.youtubecrawler.internal.C;
+import com.github.khangnt.youtubecrawler.internal.Utils;
 import com.github.khangnt.youtubecrawler.model.ResponseData;
 import com.github.khangnt.youtubecrawler.model.youtube.AbstractResponse;
 import com.github.khangnt.youtubecrawler.model.youtube.ArtistWatchCard;
@@ -36,15 +38,16 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import rx.Observable;
 
-import static com.github.khangnt.youtubecrawler.Utils.addDefaultWebPageReqHeader;
-import static com.github.khangnt.youtubecrawler.Utils.parseAjaxResponse;
-import static com.github.khangnt.youtubecrawler.Utils.parseWindowSettings;
-import static com.github.khangnt.youtubecrawler.Utils.rx;
-import static com.github.khangnt.youtubecrawler.Utils.string;
+import static com.github.khangnt.youtubecrawler.internal.Utils.mobileWebPageDownloadRequestBuilder;
+import static com.github.khangnt.youtubecrawler.internal.Utils.parseAjaxResponse;
+import static com.github.khangnt.youtubecrawler.internal.Utils.parseWindowSettings;
+import static com.github.khangnt.youtubecrawler.internal.Utils.rx;
+import static com.github.khangnt.youtubecrawler.internal.Utils.string;
 import static com.github.khangnt.youtubecrawler.internal.Preconditions.notNull;
 
 /**
- * Created by khangnt on 10/24/17.
+ * Created by Khang NT on 10/24/17.
+ * Email: khang.neon.1997@gmail.com
  */
 public class YouTubeData {
     private static final String HOME_PAGE_URL = "https://m.youtube.com/";
@@ -120,8 +123,7 @@ public class YouTubeData {
     }
 
     private Observable<WindowSettings> getWindowSettings(String webPageUrl) {
-        Request.Builder webPageReqBuilder = new Request.Builder().url(webPageUrl);
-        addDefaultWebPageReqHeader(webPageReqBuilder);
+        Request.Builder webPageReqBuilder = mobileWebPageDownloadRequestBuilder(webPageUrl);
         return rx(getOkHttpClient().newCall(webPageReqBuilder.build()))
                 .to(string())
                 .flatMap(parseWindowSettings(getGson()));

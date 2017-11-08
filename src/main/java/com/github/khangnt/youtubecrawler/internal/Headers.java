@@ -1,4 +1,4 @@
-package com.github.khangnt.youtubecrawler;
+package com.github.khangnt.youtubecrawler.internal;
 
 /**
  * Created by Khang NT on 10/30/17.

@@ -5,7 +5,7 @@ package com.github.khangnt.youtubecrawler.exception;
  * Email: khang.neon.1997@gmail.com
  */
 
-public class RegexMismatchException extends Exception {
+public class RegexMismatchException extends RuntimeException {
     public RegexMismatchException() {
     }
 

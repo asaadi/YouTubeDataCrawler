@@ -1,4 +1,4 @@
-package com.github.khangnt.youtubecrawler;
+package com.github.khangnt.youtubecrawler.internal;
 
 import java.util.TimeZone;
 
@@ -14,6 +14,6 @@ public class C {
 
     static final String BROWSER_ACCEPT = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8";
     static final String BROWSER_ACCEPT_LANGUAGE = "en-US,en;q=0.8,vi;q=0.6";
-    static final String BROWSER_USER_AGENT = "Mozilla/5.0 (Linux; Android 4.3; Nexus 10 Build/JSS15Q) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36";
+    static final String MOBILE_BROWSER_USER_AGENT = "Mozilla/5.0 (Linux; Android 4.3; Nexus 10 Build/JSS15Q) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36";
 
 }
