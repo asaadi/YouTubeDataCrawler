@@ -11,6 +11,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -159,9 +160,9 @@ public class Utils {
         return endpoint;
     }
 
-    static Map<String, List<String>> splitQuery(String url) throws UnsupportedEncodingException {
+    public static Map<String, List<String>> splitQuery(String query) throws UnsupportedEncodingException {
         final Map<String, List<String>> queryPairs = new LinkedHashMap<>();
-        final String[] pairs = url.split("&");
+        final String[] pairs = query.split("&");
         for (String pair : pairs) {
             final int idx = pair.indexOf("=");
             final String key = idx > 0 ? URLDecoder.decode(pair.substring(0, idx), "UTF-8") : pair;
@@ -182,5 +183,13 @@ public class Utils {
             }
         } catch (Throwable ignore) {
         }
+    }
+
+    public static boolean isEmpty(String s) {
+        return s == null || s.length() == 0;
+    }
+
+    public static <T> boolean isEmpty(Collection<T> list) {
+        return list == null || list.isEmpty();
     }
 }

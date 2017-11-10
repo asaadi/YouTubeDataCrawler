@@ -38,12 +38,12 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import rx.Observable;
 
+import static com.github.khangnt.youtubecrawler.internal.Preconditions.notNull;
 import static com.github.khangnt.youtubecrawler.internal.Utils.mobileWebPageDownloadRequestBuilder;
 import static com.github.khangnt.youtubecrawler.internal.Utils.parseAjaxResponse;
 import static com.github.khangnt.youtubecrawler.internal.Utils.parseWindowSettings;
 import static com.github.khangnt.youtubecrawler.internal.Utils.rx;
 import static com.github.khangnt.youtubecrawler.internal.Utils.string;
-import static com.github.khangnt.youtubecrawler.internal.Preconditions.notNull;
 
 /**
  * Created by Khang NT on 10/24/17.
@@ -120,6 +120,10 @@ public class YouTubeData {
         return getWindowSettings(channelHomePageUrl)
                 .flatMap(windowSettings -> handleAjaxRequest(ajaxUrl, channelHomePageUrl,
                         windowSettings, ChannelResponse.class));
+    }
+
+    public YouTubeStreamExtractor getStreamExtractor(SignatureDecipher signatureDecipher) {
+        return new DefaultYouTubeStreamExtractor(okHttpClient, gson, signatureDecipher);
     }
 
     private Observable<WindowSettings> getWindowSettings(String webPageUrl) {
