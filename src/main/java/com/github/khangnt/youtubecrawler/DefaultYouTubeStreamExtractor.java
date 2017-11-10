@@ -47,8 +47,10 @@ import javax.xml.parsers.ParserConfigurationException;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
+import rx.Completable;
 import rx.Emitter;
 import rx.Observable;
+import rx.schedulers.Schedulers;
 
 import static com.github.khangnt.youtubecrawler.internal.Preconditions.notNull;
 import static com.github.khangnt.youtubecrawler.internal.RegexUtils.search;
@@ -137,7 +139,7 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                 ytPlayerConfig = getYtPlayerConfig(vid, videoWebPage);
                 if (ytPlayerConfig != null) {
                     Map args = ((Map) ytPlayerConfig.get("args"));
-                    if (args.get("url_encoded_fmt_stream_map") != null)  {
+                    if (args.get("url_encoded_fmt_stream_map") != null) {
                         videoInfo = new HashMap<>();
                         // Convert to the same format returned by Utils.splitQuery()
                         for (Object key : args.keySet()) {
@@ -245,7 +247,7 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                             JsonElement playerUrlJson = null;
                             try {
                                 playerUrlJson = gson.fromJson(matcher.group(1), JsonElement.class);
-                            } catch (Throwable ignore){
+                            } catch (Throwable ignore) {
                             }
                             if (playerUrlJson instanceof JsonPrimitive) {
                                 playerUrl = playerUrlJson.getAsString();
@@ -475,31 +477,39 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
             closeQuietly(response);
         }
         if (fatal) {
-            throw new RuntimeException("Parse dash manifest failed",exception);
+            throw new RuntimeException("Parse dash manifest failed", exception);
         } else {
             exception.printStackTrace();
         }
         return Collections.emptyList();
     }
 
+    /**
+     * Mark video watched async, ignore error.
+     */
     private void markWatched(String vid, Map<String, List<String>> videoInfo) {
         if (isEmpty(videoInfo.get("videostats_playback_base_url"))) {
             return;
         }
-        String playbackUrl = videoInfo.get("videostats_playback_base_url").get(0);
-        HttpUrl httpUrl = HttpUrl.parse(playbackUrl);
-        if (httpUrl == null) return;
-        HttpUrl.Builder newBuilder = httpUrl.newBuilder();
-        String cpnAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
-        StringBuilder cpn = new StringBuilder();
-        Random random = new Random();
-        for (int i = 0; i < 16; i++) {
-            cpn.append(cpnAlphabet.charAt(random.nextInt(256) & 63));
-        }
-        newBuilder.setQueryParameter("ver", "2")
-                .setQueryParameter("cpn", cpn.toString());
-        // mark watched
-        blockingDownload(newBuilder.build().toString(), false, null);
+        Completable.create(emitter -> {
+            String playbackUrl = videoInfo.get("videostats_playback_base_url").get(0);
+            HttpUrl httpUrl = HttpUrl.parse(playbackUrl);
+            if (httpUrl == null) return;
+            HttpUrl.Builder newBuilder = httpUrl.newBuilder();
+            String cpnAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
+            StringBuilder cpn = new StringBuilder();
+            Random random = new Random();
+            for (int i = 0; i < 16; i++) {
+                cpn.append(cpnAlphabet.charAt(random.nextInt(256) & 63));
+            }
+            newBuilder.setQueryParameter("ver", "2")
+                    .setQueryParameter("cpn", cpn.toString());
+            // mark watched
+            blockingDownload(newBuilder.build().toString(), false, null);
+            emitter.onCompleted();
+        }).subscribeOn(Schedulers.io()).subscribe(() -> {
+            System.out.println("Mark " + vid + " watched");
+        }, Throwable::printStackTrace);
     }
 
     private static long parseExpires(String url, long fallback) {
