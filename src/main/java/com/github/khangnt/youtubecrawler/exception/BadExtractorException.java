@@ -6,18 +6,11 @@ package com.github.khangnt.youtubecrawler.exception;
  */
 
 public class BadExtractorException extends ExtractorException {
-    public BadExtractorException() {
+    public BadExtractorException(String s, String videoId) {
+        super(s, videoId);
     }
 
-    public BadExtractorException(String s) {
-        super(s);
-    }
-
-    public BadExtractorException(String s, Throwable throwable) {
-        super(s, throwable);
-    }
-
-    public BadExtractorException(Throwable throwable) {
-        super(throwable);
+    public BadExtractorException(String s, Throwable throwable, String videoId) {
+        super(s, throwable, videoId);
     }
 }

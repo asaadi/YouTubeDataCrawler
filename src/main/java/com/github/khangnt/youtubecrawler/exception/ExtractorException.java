@@ -6,18 +6,13 @@ package com.github.khangnt.youtubecrawler.exception;
  */
 
 public class ExtractorException extends RuntimeException {
-    public ExtractorException() {
+
+    public ExtractorException(String s, String videoId) {
+        super("[" + videoId + "] " + s);
     }
 
-    public ExtractorException(String s) {
-        super(s);
+    public ExtractorException(String s, Throwable throwable, String videoId) {
+        super("[" + videoId + "] " + s, throwable);
     }
 
-    public ExtractorException(String s, Throwable throwable) {
-        super(s, throwable);
-    }
-
-    public ExtractorException(Throwable throwable) {
-        super(throwable);
-    }
 }

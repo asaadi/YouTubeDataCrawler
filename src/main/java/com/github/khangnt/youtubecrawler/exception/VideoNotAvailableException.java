@@ -6,18 +6,11 @@ package com.github.khangnt.youtubecrawler.exception;
  */
 
 public class VideoNotAvailableException extends ExtractorException {
-    public VideoNotAvailableException() {
+    public VideoNotAvailableException(String s, String videoId) {
+        super(s, videoId);
     }
 
-    public VideoNotAvailableException(String s) {
-        super(s);
-    }
-
-    public VideoNotAvailableException(String s, Throwable throwable) {
-        super(s, throwable);
-    }
-
-    public VideoNotAvailableException(Throwable throwable) {
-        super(throwable);
+    public VideoNotAvailableException(String s, Throwable throwable, String videoId) {
+        super(s, throwable, videoId);
     }
 }

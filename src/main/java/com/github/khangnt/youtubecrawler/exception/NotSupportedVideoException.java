@@ -6,18 +6,11 @@ package com.github.khangnt.youtubecrawler.exception;
  */
 
 public class NotSupportedVideoException extends ExtractorException {
-    public NotSupportedVideoException() {
+    public NotSupportedVideoException(String s, String videoId) {
+        super(s, videoId);
     }
 
-    public NotSupportedVideoException(String s) {
-        super(s);
-    }
-
-    public NotSupportedVideoException(String s, Throwable throwable) {
-        super(s, throwable);
-    }
-
-    public NotSupportedVideoException(Throwable throwable) {
-        super(throwable);
+    public NotSupportedVideoException(String s, Throwable throwable, String videoId) {
+        super(s, throwable, videoId);
     }
 }

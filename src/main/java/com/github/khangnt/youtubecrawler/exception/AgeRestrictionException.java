@@ -6,18 +6,13 @@ package com.github.khangnt.youtubecrawler.exception;
  */
 
 public class AgeRestrictionException extends ExtractorException {
-    public AgeRestrictionException() {
+
+    public AgeRestrictionException(String s, String videoId) {
+        super(s, videoId);
     }
 
-    public AgeRestrictionException(String s) {
-        super(s);
+    public AgeRestrictionException(String s, Throwable throwable, String videoId) {
+        super(s, throwable, videoId);
     }
 
-    public AgeRestrictionException(String s, Throwable throwable) {
-        super(s, throwable);
-    }
-
-    public AgeRestrictionException(Throwable throwable) {
-        super(throwable);
-    }
 }

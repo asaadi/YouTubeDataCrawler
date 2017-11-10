@@ -132,7 +132,7 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                     playerUrl = sub("\\\\(.)", "$1", matcher.group(1));
                 }
                 if (search("player-age-gate-content\">", videoWebPage) != null) {
-                    emitter.onError(new AgeRestrictionException("Login to view age gate content"));
+                    emitter.onError(new AgeRestrictionException("Login to view age gate content", vid));
                     return;
                 }
                 ytPlayerConfig = getYtPlayerConfig(vid, videoWebPage);
@@ -152,7 +152,7 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                         }
                     }
                     if (videoInfo == null && args.get("ypc_vid") != null) {
-                        emitter.onError(new NotSupportedVideoException("'rental' videos not supported."));
+                        emitter.onError(new NotSupportedVideoException("'rental' videos not supported.", vid));
                         return;
                     }
                     isLive = "1".equals(String.valueOf(args.get("livestream")))
@@ -197,18 +197,18 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                     if (videoInfo != null && videoInfo.containsKey("reason")) {
                         List<String> reason = videoInfo.get("reason");
                         if (!reason.isEmpty()) {
-                            emitter.onError(new VideoNotAvailableException(reason.get(0)));
+                            emitter.onError(new VideoNotAvailableException(reason.get(0), vid));
                             return;
                         }
                     }
-                    emitter.onError(new BadExtractorException("'token' parameter not in video info for unknown reason: " + vid));
+                    emitter.onError(new BadExtractorException("'token' parameter not in video info for unknown reason", vid));
                     return;
                 }
 
                 // Check for "rental" videos
                 if (videoInfo.containsKey("ypc_video_rental_bar_text")
                         && !videoInfo.containsKey("author")) {
-                    emitter.onError(new NotSupportedVideoException("'rental' videos not supported."));
+                    emitter.onError(new NotSupportedVideoException("'rental' videos not supported.", vid));
                     return;
                 }
 
@@ -223,14 +223,14 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
 
 
                 if (videoInfo.containsKey("conn") && videoInfo.get("conn").get(0).startsWith("rtmp")) {
-                    emitter.onError(new NotSupportedVideoException("RTMP video not supported."));
+                    emitter.onError(new NotSupportedVideoException("RTMP video not supported.", vid));
                     return;
                 } else if (!isEmpty(videoInfo.get("url_encoded_fmt_stream_map")) && !isEmpty(videoInfo.get("url_encoded_fmt_stream_map").get(0))
                         || !isEmpty(videoInfo.get("adaptive_fmts")) && !isEmpty(videoInfo.get("adaptive_fmts").get(0))) {
                     String encodedUrlMap = videoInfo.get("url_encoded_fmt_stream_map").get(0)
                             + "," + videoInfo.get("adaptive_fmts").get(0);
                     if (encodedUrlMap.contains("rtmpe%3Dyes")) {
-                        emitter.onError(new NotSupportedVideoException("RTMP video not supported."));
+                        emitter.onError(new NotSupportedVideoException("RTMP video not supported.", vid));
                         return;
                     }
                     String[] stringSplit = encodedUrlMap.split(",");
@@ -273,7 +273,7 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                             urlLazy = new UrlLazy(() -> urlFinal + "&signature=" + urlData.get("sig").get(0));
                         } else if (urlData.containsKey("s")) {
                             if (playerUrl == null) {
-                                emitter.onError(new BadExtractorException("Player url not found"));
+                                emitter.onError(new BadExtractorException("Player url not found", vid));
                                 return;
                             }
                             String encryptedSig = urlData.get("s").get(0);
@@ -291,7 +291,7 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                     }
                 } else if (isLive) {
                     if (isEmpty(videoInfo.get("hlsvp"))) {
-                        emitter.onError(new BadExtractorException("Can't extract Live video HLS manifest link: " + vid));
+                        emitter.onError(new BadExtractorException("Can't extract Live video HLS manifest link", vid));
                         return;
                     }
                     String manifestUrl = videoInfo.get("hlsvp").get(0);
@@ -299,7 +299,7 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                     streams.put(HlsManifest.INSTANCE,
                             new YouTubeStream(urlLazy, UNKNOWN_TIME, HlsManifest.INSTANCE));
                 } else {
-                    emitter.onError(new BadExtractorException("no conn, hlsvp or url_encoded_fmt_stream_map information found in video info"));
+                    emitter.onError(new BadExtractorException("no conn, hlsvp or url_encoded_fmt_stream_map information found in video info", vid));
                     return;
                 }
 

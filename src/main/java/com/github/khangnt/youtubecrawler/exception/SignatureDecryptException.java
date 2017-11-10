@@ -6,18 +6,11 @@ package com.github.khangnt.youtubecrawler.exception;
  */
 
 public class SignatureDecryptException extends ExtractorException {
-    public SignatureDecryptException() {
+    public SignatureDecryptException(String s, String videoId) {
+        super(s, videoId);
     }
 
-    public SignatureDecryptException(String s) {
-        super(s);
-    }
-
-    public SignatureDecryptException(String s, Throwable throwable) {
-        super(s, throwable);
-    }
-
-    public SignatureDecryptException(Throwable throwable) {
-        super(throwable);
+    public SignatureDecryptException(String s, Throwable throwable, String videoId) {
+        super(s, throwable, videoId);
     }
 }
