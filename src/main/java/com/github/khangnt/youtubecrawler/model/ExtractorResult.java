@@ -12,17 +12,23 @@ import java.util.List;
 
 public class ExtractorResult {
     private String videoId;
+    private String title;
     private List<YouTubeStream> youTubeStreams;
     private List<Subtitle> subtitles;
 
-    public ExtractorResult(String videoId, List<YouTubeStream> youTubeStreams, List<Subtitle> subtitles) {
+    public ExtractorResult(String videoId, String title, List<YouTubeStream> youTubeStreams, List<Subtitle> subtitles) {
         this.videoId = videoId;
         this.youTubeStreams = youTubeStreams;
         this.subtitles = subtitles;
+        this.title = title;
     }
 
     public String getVideoId() {
         return videoId;
+    }
+
+    public String getTitle() {
+        return title;
     }
 
     public List<YouTubeStream> getYouTubeStreams() {

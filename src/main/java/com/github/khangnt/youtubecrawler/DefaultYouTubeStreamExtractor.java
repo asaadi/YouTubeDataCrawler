@@ -139,13 +139,17 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                 ytPlayerConfig = getYtPlayerConfig(vid, videoWebPage);
                 if (ytPlayerConfig != null) {
                     Map args = ((Map) ytPlayerConfig.get("args"));
-                    if (args.get("url_encoded_fmt_stream_map") != null) {
+                    if (!isEmpty((String)args.get("url_encoded_fmt_stream_map"))) {
                         videoInfo = new HashMap<>();
                         // Convert to the same format returned by Utils.splitQuery()
                         for (Object key : args.keySet()) {
                             List<String> values = new ArrayList<>();
                             values.add(args.get(key).toString());
                             videoInfo.put(key.toString(), values);
+                        }
+                        List<String> dashMpd = videoInfo.get("dashmpd");
+                        if (!isEmpty(dashMpd)) {
+                            dashMpds.add(dashMpd.get(0));
                         }
                     }
                     if (videoInfo == null && args.get("ypc_vid") != null) {
@@ -217,8 +221,8 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                 if (videoInfo.containsKey("conn") && videoInfo.get("conn").get(0).startsWith("rtmp")) {
                     emitter.onError(new NotSupportedVideoException("RTMP video not supported."));
                     return;
-                } else if (!isEmpty(videoInfo.get("url_encoded_fmt_stream_map"))
-                        || !isEmpty(videoInfo.get("adaptive_fmts"))) {
+                } else if (!isEmpty(videoInfo.get("url_encoded_fmt_stream_map")) && !isEmpty(videoInfo.get("url_encoded_fmt_stream_map").get(0))
+                        || !isEmpty(videoInfo.get("adaptive_fmts")) && !isEmpty(videoInfo.get("adaptive_fmts").get(0))) {
                     String encodedUrlMap = videoInfo.get("url_encoded_fmt_stream_map").get(0)
                             + "," + videoInfo.get("adaptive_fmts").get(0);
                     if (encodedUrlMap.contains("rtmpe%3Dyes")) {
@@ -315,13 +319,20 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                 Set<String> formats = new HashSet<>();
                 ListIterator<YouTubeStream> listIterator = streams.listIterator();
                 while (listIterator.hasNext()) {
-                    String itag = listIterator.next().getYouTubeFormat().getItag();
+                    YouTubeStream next = listIterator.next();
+                    if (next.isLive()) {
+                        continue;
+                    }
+                    String itag = next.getYouTubeFormat().getItag();
                     if (!formats.add(itag)) {
                         listIterator.remove();
                     }
                 }
 
-                emitter.onNext(new ExtractorResult(vid, streams, subtitles));
+                // title
+                String title = videoInfo.get("title").get(0);
+
+                emitter.onNext(new ExtractorResult(vid, title, streams, subtitles));
                 emitter.onCompleted();
             } catch (Throwable anyError) {
                 emitter.onError(anyError);
