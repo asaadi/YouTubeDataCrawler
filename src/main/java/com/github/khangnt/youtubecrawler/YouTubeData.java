@@ -126,6 +126,10 @@ public class YouTubeData {
         return new DefaultYouTubeStreamExtractor(okHttpClient, gson, signatureDecipher);
     }
 
+    public YouTubeStreamExtractor getStreamExtractor() {
+        return getStreamExtractor(new MusicAppSignatureDecipher(okHttpClient, gson));
+    }
+
     private Observable<WindowSettings> getWindowSettings(String webPageUrl) {
         Request.Builder webPageReqBuilder = mobileWebPageDownloadRequestBuilder(webPageUrl);
         return rx(getOkHttpClient().newCall(webPageReqBuilder.build()))

@@ -11,16 +11,16 @@ import com.github.khangnt.youtubecrawler.model.youtube.format.YouTubeFormat;
  */
 
 public class YouTubeStream {
-    public static final long UNKOWN_TIME = -1;
+    public static final long UNKNOWN_TIME = -1;
 
-    private String url;
+    private UrlLazy urlLazy;
     private long expireAt;
     private YouTubeFormat youTubeFormat;
     private boolean live;
 
-    public YouTubeStream(String url, long expireAt, YouTubeFormat format, boolean isLive) {
+    public YouTubeStream(UrlLazy urlLazy, long expireAt, YouTubeFormat format, boolean isLive) {
         this.youTubeFormat = format;
-        this.url = url;
+        this.urlLazy = urlLazy;
         this.expireAt = expireAt;
         this.live = isLive;
     }
@@ -29,8 +29,8 @@ public class YouTubeStream {
         return youTubeFormat;
     }
 
-    public String getUrl() {
-        return url;
+    public UrlLazy getUrlLazy() {
+        return urlLazy;
     }
 
     public long getExpireAt() {
@@ -56,7 +56,6 @@ public class YouTubeStream {
     @Override
     public String toString() {
         return "YouTubeStream{" +
-                "url='" + url + '\'' +
                 ", expireAt=" + expireAt +
                 ", youTubeFormat=" + youTubeFormat +
                 '}';

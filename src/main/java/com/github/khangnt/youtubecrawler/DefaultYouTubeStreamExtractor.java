@@ -11,6 +11,7 @@ import com.github.khangnt.youtubecrawler.internal.Utils;
 import com.github.khangnt.youtubecrawler.model.ExtractorResult;
 import com.github.khangnt.youtubecrawler.model.youtube.format.FormatUtils;
 import com.github.khangnt.youtubecrawler.model.youtube.stream.Subtitle;
+import com.github.khangnt.youtubecrawler.model.youtube.stream.UrlLazy;
 import com.github.khangnt.youtubecrawler.model.youtube.stream.YouTubeStream;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -29,8 +30,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -54,7 +57,7 @@ import static com.github.khangnt.youtubecrawler.internal.Utils.closeQuietly;
 import static com.github.khangnt.youtubecrawler.internal.Utils.desktopWebPageDownloadRequestBuilder;
 import static com.github.khangnt.youtubecrawler.internal.Utils.isEmpty;
 import static com.github.khangnt.youtubecrawler.internal.Utils.splitQuery;
-import static com.github.khangnt.youtubecrawler.model.youtube.stream.YouTubeStream.UNKOWN_TIME;
+import static com.github.khangnt.youtubecrawler.model.youtube.stream.YouTubeStream.UNKNOWN_TIME;
 
 /**
  * Created by Khang NT on 11/8/17.
@@ -249,28 +252,36 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                             }
                         }
 
+                        if (!url.contains("ratebypass")) {
+                            url += "&ratebypass=yes";
+                        }
+
+                        UrlLazy urlLazy;
+                        final String playerUrlFinal = playerUrl;
+                        final String urlFinal = url;
                         if (urlData.containsKey("sig")) {
-                            url += "&signature=" + urlData.get("sig").get(0);
+                            urlLazy = new UrlLazy(() -> urlFinal + "&signature=" + urlData.get("sig").get(0));
                         } else if (urlData.containsKey("s")) {
                             if (playerUrl == null) {
                                 emitter.onError(new BadExtractorException("Player url not found"));
                                 return;
                             }
                             String encryptedSig = urlData.get("s").get(0);
-                            String sig = signatureDecipher.decrypt(playerUrl, encryptedSig);
-                            url += "&signature=" + sig;
+                            urlLazy = new UrlLazy(() -> {
+                                String sig = signatureDecipher.decrypt(vid, playerUrlFinal, encryptedSig);
+                                return urlFinal + "&signature=" + sig;
+                            });
+                        } else {
+                            urlLazy = new UrlLazy(() -> urlFinal);
                         }
 
-                        if (!url.contains("ratebypass")) {
-                            url += "&ratebypass=yes";
-                        }
-                        // todo: parse expires at
-                        streams.add(new YouTubeStream(url,
-                                UNKOWN_TIME, FormatUtils.findByItag(itag), false));
+                        long expiresAt = parseExpires(url, UNKNOWN_TIME);
+                        streams.add(new YouTubeStream(urlLazy, expiresAt, FormatUtils.findByItag(itag), false));
                     }
                 } else if (!isEmpty(videoInfo.get("hlsvp"))) {
                     String manifestUrl = videoInfo.get("hlsvp").get(0);
-                    streams.add(new YouTubeStream(manifestUrl, UNKOWN_TIME, null, true));
+                    UrlLazy urlLazy = new UrlLazy(() -> manifestUrl);
+                    streams.add(new YouTubeStream(urlLazy, UNKNOWN_TIME, null, true));
                 } else {
                     emitter.onError(new BadExtractorException("no conn, hlsvp or url_encoded_fmt_stream_map information found in video info"));
                     return;
@@ -283,7 +294,7 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                         try {
                             mpdUrl = RegexUtils.sub("/s/([a-fA-F0-9\\.]+)", matcher1 -> {
                                 String encryptedSig = matcher1.group(1);
-                                String sig = signatureDecipher.decrypt(playerUrlFinal, encryptedSig);
+                                String sig = signatureDecipher.decrypt(vid, playerUrlFinal, encryptedSig);
                                 return "/signature/" + sig;
                             }, mpdUrl);
                             streams.addAll(extractMpdFormats(mpdUrl, vid, isLive, streams.isEmpty()));
@@ -296,6 +307,16 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
 
                 if (options != null && options.isMarkWatched()) {
                     markWatched(vid, videoInfo);
+                }
+
+                // remove duplicate format
+                Set<String> formats = new HashSet<>();
+                ListIterator<YouTubeStream> listIterator = streams.listIterator();
+                while (listIterator.hasNext()) {
+                    String itag = listIterator.next().getYouTubeFormat().getItag();
+                    if (!formats.add(itag)) {
+                        listIterator.remove();
+                    }
                 }
 
                 emitter.onNext(new ExtractorResult(vid, streams, subtitles));
@@ -427,11 +448,11 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                 //noinspection ConstantConditions
                 manifestXml = response.body().string();
                 String baseUrl = "https://" + response.request().url().host();
-                Pattern baseUrlPattern = Pattern.compile("<BaseURL[^>]*>(.*)<\\/BaseURL>",
+                Pattern baseUrlPattern = Pattern.compile("<BaseURL[^>]*>([^<]*)<\\/BaseURL>",
                         Pattern.CASE_INSENSITIVE);
                 Matcher matcher = baseUrlPattern.matcher(manifestXml);
                 while (matcher.find()) {
-                    String url = matcher.group(1);
+                    String url = Utils.simpleXmlUnescape(matcher.group(1));
                     if (!url.startsWith("http")) {
                         if (!url.startsWith("/")) {
                             url = "/" + url;
@@ -439,14 +460,16 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                         url = baseUrl + url;
                     }
                     HttpUrl httpUrl = notNull(HttpUrl.parse(url));
+                    UrlLazy urlLazy = new UrlLazy(httpUrl::toString);
                     String itag = httpUrl.queryParameter("itag");
-                    result.add(new YouTubeStream(url, UNKOWN_TIME, FormatUtils.findByItag(itag), isLive));
+                    long expires = parseExpires(url, UNKNOWN_TIME);
+                    result.add(new YouTubeStream(urlLazy, expires, FormatUtils.findByItag(itag), isLive));
                 }
                 return result;
             } else {
                 exception = new HttpClientException(response.code(), response.message());
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             exception = e;
         } finally {
             closeQuietly(response);
@@ -477,6 +500,16 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                 .setQueryParameter("cpn", cpn.toString());
         // mark watched
         blockingDownload(newBuilder.build().toString(), false, null);
+    }
+
+    private static long parseExpires(String url, long fallback) {
+        HttpUrl httpUrl = HttpUrl.parse(url);
+        try {
+            String expires = httpUrl != null ? httpUrl.queryParameter("expire") : null;
+            return expires != null ? Long.parseLong(expires) : fallback;
+        } catch (Throwable ignore) {
+        }
+        return fallback;
     }
 
 }

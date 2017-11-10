@@ -5,7 +5,7 @@ package com.github.khangnt.youtubecrawler.exception;
  * Email: khang.neon.1997@gmail.com
  */
 
-public class ExtractorException extends Exception {
+public class ExtractorException extends RuntimeException {
     public ExtractorException() {
     }
 

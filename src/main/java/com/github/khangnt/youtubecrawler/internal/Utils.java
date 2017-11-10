@@ -192,4 +192,36 @@ public class Utils {
     public static <T> boolean isEmpty(Collection<T> list) {
         return list == null || list.isEmpty();
     }
+
+    public static String simpleXmlUnescape(String text) {
+        StringBuilder result = new StringBuilder(text.length());
+        int i = 0;
+        int n = text.length();
+        while (i < n) {
+            char charAt = text.charAt(i);
+            if (charAt != '&') {
+                result.append(charAt);
+                i++;
+            } else {
+                if (text.startsWith("&amp;", i)) {
+                    result.append('&');
+                    i += 5;
+                } else if (text.startsWith("&apos;", i)) {
+                    result.append('\'');
+                    i += 6;
+                } else if (text.startsWith("&quot;", i)) {
+                    result.append('"');
+                    i += 6;
+                } else if (text.startsWith("&lt;", i)) {
+                    result.append('<');
+                    i += 4;
+                } else if (text.startsWith("&gt;", i)) {
+                    result.append('>');
+                    i += 4;
+                } else i++;
+            }
+        }
+        return result.toString();
+    }
+
 }
