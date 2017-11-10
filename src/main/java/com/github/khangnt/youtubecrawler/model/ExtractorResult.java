@@ -1,5 +1,6 @@
 package com.github.khangnt.youtubecrawler.model;
 
+import com.github.khangnt.youtubecrawler.Lazy;
 import com.github.khangnt.youtubecrawler.model.youtube.stream.Subtitle;
 import com.github.khangnt.youtubecrawler.model.youtube.stream.YouTubeStream;
 
@@ -14,12 +15,12 @@ public class ExtractorResult {
     private String videoId;
     private String title;
     private List<YouTubeStream> youTubeStreams;
-    private List<Subtitle> subtitles;
+    private Lazy<List<Subtitle>> subtitleListLazy;
 
-    public ExtractorResult(String videoId, String title, List<YouTubeStream> youTubeStreams, List<Subtitle> subtitles) {
+    public ExtractorResult(String videoId, String title, List<YouTubeStream> youTubeStreams, Lazy<List<Subtitle>> subtitleListLazy) {
         this.videoId = videoId;
         this.youTubeStreams = youTubeStreams;
-        this.subtitles = subtitles;
+        this.subtitleListLazy = subtitleListLazy;
         this.title = title;
     }
 
@@ -35,8 +36,8 @@ public class ExtractorResult {
         return youTubeStreams;
     }
 
-    public List<Subtitle> getSubtitles() {
-        return subtitles;
+    public Lazy<List<Subtitle>> getSubtitleListLazy() {
+        return subtitleListLazy;
     }
 
 }

@@ -121,7 +121,6 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
             Map<String, List<String>> videoInfo = null;
             Set<String> dashMpds = new LinkedHashSet<>();
 
-            List<Subtitle> subtitles = new ArrayList<>();
             List<YouTubeStream> streams = new ArrayList<>();
             try {
                 url = "https://www.youtube.com/watch?&gl=US&hl=en&has_verified=1&bpctr=9999999999&v=" + vid;
@@ -213,10 +212,15 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                     return;
                 }
 
-                subtitles.addAll(getSubtitles(vid, videoWebPage));
-                if (ytPlayerConfig != null) {
-                    subtitles.addAll(getAutomaticCaptions(vid, videoWebPage, ytPlayerConfig));
-                }
+                Lazy<List<Subtitle>> subtitleListLazy = new Lazy<>(() -> {
+                    List<Subtitle> subtitles = new ArrayList<>();
+                    subtitles.addAll(getSubtitles(vid, videoWebPage));
+                    if (ytPlayerConfig != null) {
+                        subtitles.addAll(getAutomaticCaptions(vid, videoWebPage, ytPlayerConfig));
+                    }
+                    return subtitles;
+                });
+
 
                 if (videoInfo.containsKey("conn") && videoInfo.get("conn").get(0).startsWith("rtmp")) {
                     emitter.onError(new NotSupportedVideoException("RTMP video not supported."));
@@ -332,7 +336,7 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                 // title
                 String title = videoInfo.get("title").get(0);
 
-                emitter.onNext(new ExtractorResult(vid, title, streams, subtitles));
+                emitter.onNext(new ExtractorResult(vid, title, streams, subtitleListLazy));
                 emitter.onCompleted();
             } catch (Throwable anyError) {
                 emitter.onError(anyError);
