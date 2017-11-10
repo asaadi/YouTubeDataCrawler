@@ -6,14 +6,14 @@ package com.github.khangnt.youtubecrawler.model.youtube.format;
  */
 
 public class UnknownFormat implements YouTubeFormat {
-    private int itag;
+    private String itag;
 
-    public UnknownFormat(int itag) {
+    public UnknownFormat(String itag) {
         this.itag = itag;
     }
 
     @Override
-    public int getItag() {
+    public String getItag() {
         return itag;
     }
 

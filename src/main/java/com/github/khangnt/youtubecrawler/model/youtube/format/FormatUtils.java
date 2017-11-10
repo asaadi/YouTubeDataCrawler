@@ -9,7 +9,7 @@ import java.util.Map;
  */
 
 public class FormatUtils {
-    private static final Map<Integer, YouTubeFormat> sYoutubeFormatMap;
+    private static final Map<String, YouTubeFormat> sYoutubeFormatMap;
     static {
         sYoutubeFormatMap = new HashMap<>();
         NonDash[] nonDashes = NonDash.values();
@@ -30,7 +30,7 @@ public class FormatUtils {
         }
     }
 
-    public static YouTubeFormat findByItag(int itag) {
+    public static YouTubeFormat findByItag(String itag) {
         YouTubeFormat format = sYoutubeFormatMap.get(itag);
         return format != null ? format : new UnknownFormat(itag);
     }

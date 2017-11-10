@@ -13,27 +13,27 @@ import static com.github.khangnt.youtubecrawler.model.youtube.format.Container.*
  */
 public enum  DashAudioOnly implements YouTubeFormat {
     /* Dash mp4 audio */
-    I139(139, M4A, AAC, 48),
-    I140(140, M4A, AAC, 128),
-    I141(141, M4A, AAC, 256),
-    I256(256, M4A, AAC, 128 /*Guess number*/),
-    I258(258, M4A, AAC, 128 /*Guess number*/),
+    I139("139", M4A, AAC, 48),
+    I140("140", M4A, AAC, 128),
+    I141("141", M4A, AAC, 256),
+    I256("256", M4A, AAC, 128 /*Guess number*/),
+    I258("258", M4A, AAC, 128 /*Guess number*/),
 
     /* Dash webm audio */
-    I171(171, WEBM, VORBIS, 128),
-    I172(172, WEBM, VORBIS, 256),
+    I171("171", WEBM, VORBIS, 128),
+    I172("172", WEBM, VORBIS, 256),
 
     /* Dash webm audio with opus inside - only compatible with android 21+ */
-    I249(249, WEBM, OPUS, 50),
-    I250(250, WEBM, OPUS, 70),
-    I251(251, WEBM, OPUS, 160),
+    I249("249", WEBM, OPUS, 50),
+    I250("250", WEBM, OPUS, 70),
+    I251("251", WEBM, OPUS, 160),
     ;
-    private int itag;
+    private String itag;
     private Container container;
     private AudioEncoding audioEncoding;
     private int audioBitrate;
 
-    DashAudioOnly(int itag, Container container, AudioEncoding audioEncoding, int audioBitrate) {
+    DashAudioOnly(String itag, Container container, AudioEncoding audioEncoding, int audioBitrate) {
         this.itag = itag;
         this.container = container;
         this.audioEncoding = audioEncoding;
@@ -41,7 +41,7 @@ public enum  DashAudioOnly implements YouTubeFormat {
     }
 
     @Override
-    public int getItag() {
+    public String getItag() {
         return itag;
     }
 

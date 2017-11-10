@@ -9,23 +9,23 @@ import static com.github.khangnt.youtubecrawler.model.youtube.format.Container.M
  */
 
 public enum  LiveStreaming implements YouTubeFormat {
-    I91(91, MP4, 144, AAC, 48),
-    I92(92, MP4, 240, AAC, 48),
-    I93(93, MP4, 360, AAC, 128),
-    I94(94, MP4, 480, AAC, 128),
-    I95(95, MP4, 720, AAC, 256),
-    I96(96, MP4, 1080, AAC, 256),
-    I132(132, MP4, 240, AAC, 48),
-    I151(151, MP4, 72, AAC, 24),
+    I91("91", MP4, 144, AAC, 48),
+    I92("92", MP4, 240, AAC, 48),
+    I93("93", MP4, 360, AAC, 128),
+    I94("94", MP4, 480, AAC, 128),
+    I95("95", MP4, 720, AAC, 256),
+    I96("96", MP4, 1080, AAC, 256),
+    I132("132", MP4, 240, AAC, 48),
+    I151("151", MP4, 72, AAC, 24),
     ;
 
-    private int itag;
+    private String itag;
     private Container container;
     private int videoResolution;
     private AudioEncoding audioEncoding;
     private int audioBitrate;
 
-    LiveStreaming(int itag, Container container, int videoResolution, AudioEncoding audioEncoding, int audioBitrate) {
+    LiveStreaming(String itag, Container container, int videoResolution, AudioEncoding audioEncoding, int audioBitrate) {
         this.itag = itag;
         this.container = container;
         this.videoResolution = videoResolution;
@@ -34,7 +34,7 @@ public enum  LiveStreaming implements YouTubeFormat {
     }
 
     @Override
-    public int getItag() {
+    public String getItag() {
         return itag;
     }
 

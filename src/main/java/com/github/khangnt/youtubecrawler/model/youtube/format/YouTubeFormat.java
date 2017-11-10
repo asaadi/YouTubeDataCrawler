@@ -6,6 +6,6 @@ package com.github.khangnt.youtubecrawler.model.youtube.format;
  */
 
 public interface YouTubeFormat {
-    int getItag();
+    String getItag();
     Container getContainer();
 }
