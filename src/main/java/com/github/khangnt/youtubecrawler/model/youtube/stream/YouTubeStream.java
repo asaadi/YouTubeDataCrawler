@@ -2,7 +2,6 @@ package com.github.khangnt.youtubecrawler.model.youtube.stream;
 
 import com.github.khangnt.youtubecrawler.model.youtube.format.DashAudioOnly;
 import com.github.khangnt.youtubecrawler.model.youtube.format.DashVideoOnly;
-import com.github.khangnt.youtubecrawler.model.youtube.format.LiveStreaming;
 import com.github.khangnt.youtubecrawler.model.youtube.format.NonDash;
 import com.github.khangnt.youtubecrawler.model.youtube.format.YouTubeFormat;
 
@@ -17,11 +16,13 @@ public class YouTubeStream {
     private String url;
     private long expireAt;
     private YouTubeFormat youTubeFormat;
+    private boolean live;
 
-    protected YouTubeStream(String url, long expireAt, YouTubeFormat format) {
+    public YouTubeStream(String url, long expireAt, YouTubeFormat format, boolean isLive) {
         this.youTubeFormat = format;
         this.url = url;
         this.expireAt = expireAt;
+        this.live = isLive;
     }
 
     public YouTubeFormat getYouTubeFormat() {
@@ -37,7 +38,7 @@ public class YouTubeStream {
     }
 
     public boolean isLive() {
-        return youTubeFormat instanceof LiveStreaming;
+        return live;
     }
 
     public boolean isDashAudio() {
