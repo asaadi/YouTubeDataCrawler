@@ -10,6 +10,8 @@ import com.github.khangnt.youtubecrawler.internal.RegexUtils;
 import com.github.khangnt.youtubecrawler.internal.Utils;
 import com.github.khangnt.youtubecrawler.model.ExtractorResult;
 import com.github.khangnt.youtubecrawler.model.youtube.format.FormatUtils;
+import com.github.khangnt.youtubecrawler.model.youtube.format.HlsManifest;
+import com.github.khangnt.youtubecrawler.model.youtube.format.YouTubeFormat;
 import com.github.khangnt.youtubecrawler.model.youtube.stream.Subtitle;
 import com.github.khangnt.youtubecrawler.model.youtube.stream.UrlLazy;
 import com.github.khangnt.youtubecrawler.model.youtube.stream.YouTubeStream;
@@ -30,10 +32,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -121,7 +121,7 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
             Map<String, List<String>> videoInfo = null;
             Set<String> dashMpds = new LinkedHashSet<>();
 
-            List<YouTubeStream> streams = new ArrayList<>();
+            Map<YouTubeFormat, YouTubeStream> streams = new HashMap<>();
             try {
                 url = "https://www.youtube.com/watch?&gl=US&hl=en&has_verified=1&bpctr=9999999999&v=" + vid;
                 videoWebPage = blockingDownload(url, true, "Failed to download video web page");
@@ -286,12 +286,18 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                         }
 
                         long expiresAt = parseExpires(url, UNKNOWN_TIME);
-                        streams.add(new YouTubeStream(urlLazy, expiresAt, FormatUtils.findByItag(itag), false));
+                        YouTubeFormat youTubeFormat = FormatUtils.findByItag(itag);
+                        streams.put(youTubeFormat, new YouTubeStream(urlLazy, expiresAt, youTubeFormat));
                     }
-                } else if (!isEmpty(videoInfo.get("hlsvp"))) {
+                } else if (isLive) {
+                    if (isEmpty(videoInfo.get("hlsvp"))) {
+                        emitter.onError(new BadExtractorException("Can't extract Live video HLS manifest link: " + vid));
+                        return;
+                    }
                     String manifestUrl = videoInfo.get("hlsvp").get(0);
                     UrlLazy urlLazy = new UrlLazy(() -> manifestUrl);
-                    streams.add(new YouTubeStream(urlLazy, UNKNOWN_TIME, null, true));
+                    streams.put(HlsManifest.INSTANCE,
+                            new YouTubeStream(urlLazy, UNKNOWN_TIME, HlsManifest.INSTANCE));
                 } else {
                     emitter.onError(new BadExtractorException("no conn, hlsvp or url_encoded_fmt_stream_map information found in video info"));
                     return;
@@ -300,6 +306,7 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                 if (!isEmpty(playerUrl)) {
                     final String playerUrlFinal = playerUrl;
                     // Look for the DASH manifest
+                    Map<YouTubeFormat, YouTubeStream> formats = new HashMap<>();
                     for (String mpdUrl : dashMpds) {
                         try {
                             mpdUrl = RegexUtils.sub("/s/([a-fA-F0-9\\.]+)", matcher1 -> {
@@ -307,36 +314,32 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                                 String sig = signatureDecipher.decrypt(vid, playerUrlFinal, encryptedSig);
                                 return "/signature/" + sig;
                             }, mpdUrl);
-                            streams.addAll(extractMpdFormats(mpdUrl, vid, isLive, streams.isEmpty()));
+
+                            List<YouTubeStream> dashFormats = extractMpdFormats(mpdUrl, vid, streams.isEmpty());
+                            for (YouTubeStream dashFormat : dashFormats) {
+                                // Do not overwrite DASH format found in some previous DASH manifest
+                                if (!formats.containsKey(dashFormat.getYouTubeFormat())) {
+                                    formats.put(dashFormat.getYouTubeFormat(), dashFormat);
+                                }
+                            }
                         } catch (Exception e) {
                             // skip dash manifest
                             e.printStackTrace();
                         }
                     }
+                    // Override the formats we found through non-DASH
+                    streams.putAll(formats);
                 }
 
                 if (options != null && options.isMarkWatched()) {
                     markWatched(vid, videoInfo);
                 }
 
-                // remove duplicate format
-                Set<String> formats = new HashSet<>();
-                ListIterator<YouTubeStream> listIterator = streams.listIterator();
-                while (listIterator.hasNext()) {
-                    YouTubeStream next = listIterator.next();
-                    if (next.isLive()) {
-                        continue;
-                    }
-                    String itag = next.getYouTubeFormat().getItag();
-                    if (!formats.add(itag)) {
-                        listIterator.remove();
-                    }
-                }
-
                 // title
                 String title = videoInfo.get("title").get(0);
 
-                emitter.onNext(new ExtractorResult(vid, title, streams, subtitleListLazy));
+                emitter.onNext(new ExtractorResult(vid, title, new ArrayList<>(streams.values()),
+                        subtitleListLazy));
                 emitter.onCompleted();
             } catch (Throwable anyError) {
                 emitter.onError(anyError);
@@ -452,7 +455,7 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
         return subtitles;
     }
 
-    private List<YouTubeStream> extractMpdFormats(String mpdUrl, String videoId, boolean isLive, boolean fatal) {
+    private List<YouTubeStream> extractMpdFormats(String mpdUrl, String videoId, boolean fatal) {
         // download manifest xml
         Response response = null;
         Exception exception;
@@ -480,7 +483,7 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                     UrlLazy urlLazy = new UrlLazy(httpUrl::toString);
                     String itag = httpUrl.queryParameter("itag");
                     long expires = parseExpires(url, UNKNOWN_TIME);
-                    result.add(new YouTubeStream(urlLazy, expires, FormatUtils.findByItag(itag), isLive));
+                    result.add(new YouTubeStream(urlLazy, expires, FormatUtils.findByItag(itag)));
                 }
                 return result;
             } else {

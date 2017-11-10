@@ -6,7 +6,7 @@ package com.github.khangnt.youtubecrawler.model.youtube.format;
  */
 
 public enum Container {
-    _3GP("3gp"), MP4("mp4"), WEBM("webm"), M4A("m4a"), FLV("flv");
+    _3GP("3gp"), MP4("mp4"), WEBM("webm"), M4A("m4a"), FLV("flv"), M3U8("m3u8");
 
     private String name;
 

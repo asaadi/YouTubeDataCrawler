@@ -2,6 +2,8 @@ package com.github.khangnt.youtubecrawler.model.youtube.stream;
 
 import com.github.khangnt.youtubecrawler.model.youtube.format.DashAudioOnly;
 import com.github.khangnt.youtubecrawler.model.youtube.format.DashVideoOnly;
+import com.github.khangnt.youtubecrawler.model.youtube.format.HlsManifest;
+import com.github.khangnt.youtubecrawler.model.youtube.format.LiveStreaming;
 import com.github.khangnt.youtubecrawler.model.youtube.format.NonDash;
 import com.github.khangnt.youtubecrawler.model.youtube.format.YouTubeFormat;
 
@@ -16,13 +18,11 @@ public class YouTubeStream {
     private UrlLazy urlLazy;
     private long expireAt;
     private YouTubeFormat youTubeFormat;
-    private boolean live;
 
-    public YouTubeStream(UrlLazy urlLazy, long expireAt, YouTubeFormat format, boolean isLive) {
+    public YouTubeStream(UrlLazy urlLazy, long expireAt, YouTubeFormat format) {
         this.youTubeFormat = format;
         this.urlLazy = urlLazy;
         this.expireAt = expireAt;
-        this.live = isLive;
     }
 
     public YouTubeFormat getYouTubeFormat() {
@@ -38,7 +38,8 @@ public class YouTubeStream {
     }
 
     public boolean isLive() {
-        return live;
+        return youTubeFormat instanceof HlsManifest
+                || youTubeFormat instanceof LiveStreaming;
     }
 
     public boolean isDashAudio() {

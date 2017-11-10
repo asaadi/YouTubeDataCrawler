@@ -22,4 +22,18 @@ public class UnknownFormat implements YouTubeFormat {
         return null;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        UnknownFormat that = (UnknownFormat) o;
+
+        return itag != null ? itag.equals(that.itag) : that.itag == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return itag != null ? itag.hashCode() : 0;
+    }
 }
