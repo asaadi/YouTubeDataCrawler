@@ -112,8 +112,9 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
             Matcher matcher;
             String url;
             String videoWebPage;
-            String videoInfoWebPage = null;
+            String videoInfoWebPage;
             String playerUrl = null;
+            String dashManifestUrl = null;
             boolean isLive = false;
             String embedWebpage = null;
             String sts = null;
@@ -315,6 +316,10 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                                 return "/signature/" + sig;
                             }, mpdUrl);
 
+                            if (dashManifestUrl == null) {
+                                dashManifestUrl = mpdUrl;
+                            }
+
                             List<YouTubeStream> dashFormats = extractMpdFormats(mpdUrl, vid, streams.isEmpty());
                             for (YouTubeStream dashFormat : dashFormats) {
                                 // Do not overwrite DASH format found in some previous DASH manifest
@@ -338,8 +343,8 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                 // title
                 String title = videoInfo.get("title").get(0);
 
-                emitter.onNext(new ExtractorResult(vid, title, new ArrayList<>(streams.values()),
-                        subtitleListLazy));
+                emitter.onNext(new ExtractorResult(vid, title, dashManifestUrl,
+                        new ArrayList<>(streams.values()), subtitleListLazy));
                 emitter.onCompleted();
             } catch (Throwable anyError) {
                 emitter.onError(anyError);
