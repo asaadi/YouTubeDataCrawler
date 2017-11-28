@@ -32,7 +32,7 @@ public class RegexUtils {
         return Pattern.compile(regex).matcher(source).replaceAll(replacement);
     }
 
-    public static String sub(String regex, Func1<Matcher, String> replaceEvaluation, String source) {
+    public static String sub(String regex, String source, Func1<Matcher, String> replaceEvaluation) {
         Matcher matcher = Pattern.compile(regex).matcher(source);
         StringBuffer sb = new StringBuffer();
         while (matcher.find()) {

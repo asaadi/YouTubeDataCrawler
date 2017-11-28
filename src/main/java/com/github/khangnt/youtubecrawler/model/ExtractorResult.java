@@ -1,6 +1,7 @@
 package com.github.khangnt.youtubecrawler.model;
 
 import com.github.khangnt.youtubecrawler.Lazy;
+import com.github.khangnt.youtubecrawler.model.youtube.stream.DashManifestInfo;
 import com.github.khangnt.youtubecrawler.model.youtube.stream.Subtitle;
 import com.github.khangnt.youtubecrawler.model.youtube.stream.YouTubeStream;
 
@@ -16,15 +17,15 @@ import java.util.List;
 public class ExtractorResult {
     private String videoId;
     private String title;
-    private String dashManifest;
+    private DashManifestInfo dashManifestInfo;
     private List<YouTubeStream> youTubeStreams;
     private Lazy<List<Subtitle>> subtitleListLazy;
 
-    public ExtractorResult(String videoId, String title, @Nullable String dashManifest,
+    public ExtractorResult(String videoId, String title, DashManifestInfo dashManifestInfo,
                            List<YouTubeStream> youTubeStreams, Lazy<List<Subtitle>> subtitleListLazy) {
         this.videoId = videoId;
         this.title = title;
-        this.dashManifest = dashManifest;
+        this.dashManifestInfo = dashManifestInfo;
         this.youTubeStreams = youTubeStreams;
         this.subtitleListLazy = subtitleListLazy;
     }
@@ -38,8 +39,8 @@ public class ExtractorResult {
     }
 
     @Nullable
-    public String getDashManifest() {
-        return dashManifest;
+    public DashManifestInfo getDashManifestInfo() {
+        return dashManifestInfo;
     }
 
     public List<YouTubeStream> getYouTubeStreams() {

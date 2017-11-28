@@ -6,5 +6,19 @@ package com.github.khangnt.youtubecrawler.model.youtube.format;
  */
 
 public enum  AudioEncoding {
-    AAC, VORBIS, OPUS, MP3
+    AAC("mp4a"), VORBIS("vorbis"), OPUS("opus"), MP3("mpeg");
+    private String codec;
+
+    AudioEncoding(String codec) {
+        this.codec = codec;
+    }
+
+    public String getCodec() {
+        return codec;
+    }
+
+    @Override
+    public String toString() {
+        return codec;
+    }
 }

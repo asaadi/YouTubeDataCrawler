@@ -1,5 +1,6 @@
 package com.github.khangnt.youtubecrawler.internal;
 
+import com.github.khangnt.youtubecrawler.Const;
 import com.github.khangnt.youtubecrawler.exception.HttpClientException;
 import com.github.khangnt.youtubecrawler.exception.RegexMismatchException;
 import com.github.khangnt.youtubecrawler.model.youtube.WindowSettings;
@@ -17,6 +18,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import okhttp3.Call;
 import okhttp3.Request;
@@ -43,6 +45,9 @@ import static com.github.khangnt.youtubecrawler.internal.Headers.X_YOUTUBE_VARIA
  */
 
 public class Utils {
+    private static final Pattern XS_DURATION_PATTERN =
+            Pattern.compile("^(-)?P(([0-9]*)Y)?(([0-9]*)M)?(([0-9]*)D)?"
+                    + "(T(([0-9]*)H)?(([0-9]*)M)?(([0-9.]*)S)?)?$");
 
     static void addXYouTubeHeader(Request.Builder builder, WindowSettings windowSettings) {
         builder.header(X_YOUTUBE_VARIANTS_CHECKSUM, windowSettings.getVariantChecksum())
@@ -121,14 +126,14 @@ public class Utils {
 
     // unescape all \U0001F629 to 😩
     public static String unescapeUtf32(String source) {
-        return RegexUtils.sub("\\\\U[0-9a-fA-F]{8}", matcher -> {
+        return RegexUtils.sub("\\\\U[0-9a-fA-F]{8}", source, matcher -> {
             String hex = matcher.group(0).replace("\\U", "0x");
             try {
                 return new String(intToByteArray(Integer.decode(hex)), "utf-32");
             } catch (UnsupportedEncodingException e) {
                 return "";
             }
-        }, source);
+        });
     }
 
     public static <T> Func1<String, T> parseAjaxResponse(Gson gson, Class<T> tClass) {
@@ -193,6 +198,10 @@ public class Utils {
         return list == null || list.isEmpty();
     }
 
+    public static <T> boolean isEmpty(List<String> list) {
+        return list == null || list.isEmpty() || isEmpty(list.get(0));
+    }
+
     public static String simpleXmlUnescape(String text) {
         StringBuilder result = new StringBuilder(text.length());
         int i = 0;
@@ -222,6 +231,58 @@ public class Utils {
             }
         }
         return result.toString();
+    }
+
+    public static int safeParse(String number, int fallback) {
+        try {
+            return Integer.parseInt(number);
+        } catch (Throwable ignore) {
+        }
+        return fallback;
+    }
+
+    public static float safeParse(String number, float fallback) {
+        try {
+            return Integer.parseInt(number);
+        } catch (Throwable ignore) {
+        }
+        return fallback;
+    }
+
+    /**
+     * Parses an xs:duration attribute value, returning the parsed duration in milliseconds.
+     *
+     * @param value The attribute value to decode.
+     * @return The parsed duration in milliseconds.
+     */
+    public static long parseXsDuration(String value) {
+        if (isEmpty(value)) return Const.UNKNOWN_VALUE;
+        Matcher matcher = XS_DURATION_PATTERN.matcher(value);
+        if (matcher.matches()) {
+            boolean negated = !isEmpty(matcher.group(1));
+            // Durations containing years and months aren't completely defined. We assume there are
+            // 30.4368 days in a month, and 365.242 days in a year.
+            String years = matcher.group(3);
+            double durationSeconds = (years != null) ? Double.parseDouble(years) * 31556908 : 0;
+            String months = matcher.group(5);
+            durationSeconds += (months != null) ? Double.parseDouble(months) * 2629739 : 0;
+            String days = matcher.group(7);
+            durationSeconds += (days != null) ? Double.parseDouble(days) * 86400 : 0;
+            String hours = matcher.group(10);
+            durationSeconds += (hours != null) ? Double.parseDouble(hours) * 3600 : 0;
+            String minutes = matcher.group(12);
+            durationSeconds += (minutes != null) ? Double.parseDouble(minutes) * 60 : 0;
+            String seconds = matcher.group(14);
+            durationSeconds += (seconds != null) ? Double.parseDouble(seconds) : 0;
+            long durationMillis = (long) (durationSeconds * 1000);
+            return negated ? -durationMillis : durationMillis;
+        } else {
+            return (long) (Double.parseDouble(value) * 3600 * 1000);
+        }
+    }
+
+    public static int compare(int var0, int var1) {
+        return var0 < var1?-1:(var0 == var1?0:1);
     }
 
 }

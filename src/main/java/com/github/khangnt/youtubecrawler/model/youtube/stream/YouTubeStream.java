@@ -1,11 +1,10 @@
 package com.github.khangnt.youtubecrawler.model.youtube.stream;
 
-import com.github.khangnt.youtubecrawler.model.youtube.format.DashAudioOnly;
-import com.github.khangnt.youtubecrawler.model.youtube.format.DashVideoOnly;
-import com.github.khangnt.youtubecrawler.model.youtube.format.HlsManifest;
-import com.github.khangnt.youtubecrawler.model.youtube.format.LiveStreaming;
-import com.github.khangnt.youtubecrawler.model.youtube.format.NonDash;
-import com.github.khangnt.youtubecrawler.model.youtube.format.YouTubeFormat;
+import com.github.khangnt.youtubecrawler.internal.Utils;
+
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Comparator;
 
 /**
  * Created by Khang NT on 11/8/17.
@@ -13,20 +12,19 @@ import com.github.khangnt.youtubecrawler.model.youtube.format.YouTubeFormat;
  */
 
 public class YouTubeStream {
-    public static final long UNKNOWN_TIME = -1;
 
     private UrlLazy urlLazy;
     private long expireAt;
-    private YouTubeFormat youTubeFormat;
+    private String itag;
+    private String container;
+    private String mimeType;
 
-    public YouTubeStream(UrlLazy urlLazy, long expireAt, YouTubeFormat format) {
-        this.youTubeFormat = format;
+    public YouTubeStream(UrlLazy urlLazy, long expireAt, String itag, String container, String mimeType) {
         this.urlLazy = urlLazy;
         this.expireAt = expireAt;
-    }
-
-    public YouTubeFormat getYouTubeFormat() {
-        return youTubeFormat;
+        this.itag = itag;
+        this.container = container;
+        this.mimeType = mimeType;
     }
 
     public UrlLazy getUrlLazy() {
@@ -37,28 +35,52 @@ public class YouTubeStream {
         return expireAt;
     }
 
-    public boolean isLive() {
-        return youTubeFormat instanceof HlsManifest
-                || youTubeFormat instanceof LiveStreaming;
+    @NotNull
+    public String getItag() {
+        return itag;
     }
 
-    public boolean isDashAudio() {
-        return youTubeFormat instanceof DashAudioOnly;
+    public String getContainer() {
+        return container;
     }
 
-    public boolean isDashVideo() {
-        return youTubeFormat instanceof DashVideoOnly;
-    }
-
-    public boolean isNonDash() {
-        return youTubeFormat instanceof NonDash;
+    public String getMimeType() {
+        return mimeType;
     }
 
     @Override
     public String toString() {
         return "YouTubeStream{" +
                 ", expireAt=" + expireAt +
-                ", youTubeFormat=" + youTubeFormat +
+                ", itag='" + itag + '\'' +
+                ", container='" + container + '\'' +
+                ", mimeType='" + mimeType + '\'' +
                 '}';
     }
+
+    public static Comparator<YouTubeStream> compareStream() {
+        return (s1, s2) -> {
+            int compare = Utils.compare(getType(s1), getType(s2));
+            if (compare == 0) {
+                if (s1 instanceof YouTubeDashStream
+                        && s2 instanceof YouTubeDashStream) {
+                    return YouTubeDashStream.comparator()
+                            .compare(((YouTubeDashStream) s1), ((YouTubeDashStream) s2));
+                }
+            }
+            return compare;
+        };
+    }
+
+    private static int getType(YouTubeStream stream) {
+        if (stream instanceof YouTubeDashAudioStream) {
+            return 0;
+        } else if (stream instanceof YouTubeDashVideoStream) {
+            return 1;
+        } else if (stream instanceof YouTubeNonDashStream) {
+            return 2;
+        }
+        return 3;
+    }
+
 }
