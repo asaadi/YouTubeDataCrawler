@@ -2,6 +2,8 @@ package com.github.khangnt.youtubecrawler.model.youtube.stream;
 
 import com.github.khangnt.youtubecrawler.internal.Utils;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Comparator;
 
 /**
@@ -12,12 +14,14 @@ import java.util.Comparator;
 public abstract class YouTubeDashStream extends YouTubeStream {
     private int bandwidth;
     private int contentLength;
+    private SegmentBaseData segmentBase;
 
     public YouTubeDashStream(UrlLazy urlLazy, long expireAt, String itag, String container,
-                             String mimeType, int bandwidth, int contentLength) {
+                             String mimeType, int bandwidth, int contentLength, SegmentBaseData segmentBase) {
         super(urlLazy, expireAt, itag, container, mimeType);
         this.bandwidth = bandwidth;
         this.contentLength = contentLength;
+        this.segmentBase = segmentBase;
     }
 
     public int getBandwidth() {
@@ -28,11 +32,17 @@ public abstract class YouTubeDashStream extends YouTubeStream {
         return contentLength;
     }
 
+    @Nullable
+    public SegmentBaseData getSegmentBase() {
+        return segmentBase;
+    }
+
     @Override
     public String toString() {
         return "YouTubeDashStream{" +
                 "bandwidth=" + bandwidth +
                 ", contentLength=" + contentLength +
+                ", segmentBase=" + segmentBase +
                 "} " + super.toString();
     }
 

@@ -9,7 +9,13 @@ import com.github.khangnt.youtubecrawler.exception.HttpClientException;
 import com.github.khangnt.youtubecrawler.exception.SignatureDecryptException;
 import com.github.khangnt.youtubecrawler.internal.Utils;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
@@ -29,7 +35,8 @@ public class MusicAppSignatureDecipher implements SignatureDecipher {
     private static final String VID_PARAM = "vid";
     private static final String PLAYER_URL_PARAM = "player_url";
     private static final String ENCRYPTED_SIGNATURE_PARAM = "s";
-    private static final String DECRYPTED_SIGNATURE_KEY = "sig";
+    private static final String RESULT_KEY = "res";
+    private static final String DELIMITER = "|";
 
     private OkHttpClient okHttpClient;
     private Gson gson;
@@ -40,13 +47,14 @@ public class MusicAppSignatureDecipher implements SignatureDecipher {
     }
 
     @Override
-    public String decrypt(String vid, String playerUrl, String encryptedSignature) throws SignatureDecryptException {
+    public List<String> decrypt(String vid, String playerUrl, List<String> encryptedSignature) throws SignatureDecryptException {
+        if (Utils.isEmpty(encryptedSignature)) return Collections.emptyList();
         Request request = new Request.Builder()
                 .url(ENDPOINT)
                 .post(new FormBody.Builder()
                         .add(VID_PARAM, vid)
                         .add(PLAYER_URL_PARAM, playerUrl)
-                        .add(ENCRYPTED_SIGNATURE_PARAM, encryptedSignature)
+                        .add(ENCRYPTED_SIGNATURE_PARAM, Utils.join(encryptedSignature, DELIMITER))
                         .build())
                 .build();
         Response response = null;
@@ -57,7 +65,12 @@ public class MusicAppSignatureDecipher implements SignatureDecipher {
                 //noinspection ConstantConditions
                 String body = response.body().string();
                 JsonObject jsonObject = gson.fromJson(body, JsonObject.class);
-                return jsonObject.get(DECRYPTED_SIGNATURE_KEY).getAsString();
+                JsonArray result = jsonObject.getAsJsonArray(RESULT_KEY);
+                List<String> decryptedSignature = new ArrayList<>();
+                for (JsonElement element : result) {
+                    decryptedSignature.add(element.getAsString());
+                }
+                return decryptedSignature;
             } else {
                 exception = new HttpClientException(response.code(), response.message());
             }

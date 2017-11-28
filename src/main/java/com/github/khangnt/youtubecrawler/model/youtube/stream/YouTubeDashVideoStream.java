@@ -13,9 +13,9 @@ public class YouTubeDashVideoStream extends YouTubeDashStream {
     private int fps;
 
     public YouTubeDashVideoStream(UrlLazy urlLazy, long expireAt, String itag, String container,
-                                  String mimeType, int bandwidth, int contentLength, int width, int height,
-                                  String videoCodec, int fps) {
-        super(urlLazy, expireAt, itag, container, mimeType, bandwidth, contentLength);
+                                  String mimeType, int bandwidth, int contentLength, SegmentBaseData segmentBase,
+                                  int width, int height, String videoCodec, int fps) {
+        super(urlLazy, expireAt, itag, container, mimeType, bandwidth, contentLength, segmentBase);
         this.width = width;
         this.height = height;
         this.videoCodec = videoCodec;

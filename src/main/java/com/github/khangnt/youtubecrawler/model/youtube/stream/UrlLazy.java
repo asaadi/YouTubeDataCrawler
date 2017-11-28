@@ -11,7 +11,7 @@ import rx.functions.Func0;
  *
  * {@link UrlLazy} is using in {@link YouTubeStream}, the reason is signature decrypt task is cost time,
  * but not all url are used. Signature part will be computed when {@link UrlLazy#get()} called,
- * be careful when call this method on main thread, or check {@link UrlLazy#computed()} for safe.
+ * be careful when call this method on main thread.
  */
 public class UrlLazy extends Lazy<String> {
     public UrlLazy(Func0<String> valueGetter) {

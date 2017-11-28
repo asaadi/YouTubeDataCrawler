@@ -11,9 +11,9 @@ public class YouTubeDashAudioStream extends YouTubeDashStream {
     private int channelCount;
 
     public YouTubeDashAudioStream(UrlLazy urlLazy, long expireAt, String itag, String container,
-                                  String mimeType, int bandwidth, int contentLength, String audioCodec,
-                                  int channelCount) {
-        super(urlLazy, expireAt, itag, container, mimeType, bandwidth, contentLength);
+                                  String mimeType, int bandwidth, int contentLength, SegmentBaseData segmentBase,
+                                  String audioCodec, int channelCount) {
+        super(urlLazy, expireAt, itag, container, mimeType, bandwidth, contentLength, segmentBase);
         this.audioCodec = audioCodec;
         this.channelCount = channelCount;
     }

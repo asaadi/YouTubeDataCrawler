@@ -8,6 +8,7 @@ import com.github.khangnt.youtubecrawler.exception.NotSupportedVideoException;
 import com.github.khangnt.youtubecrawler.exception.VideoNotAvailableException;
 import com.github.khangnt.youtubecrawler.internal.NaturalDeserializer;
 import com.github.khangnt.youtubecrawler.internal.RegexUtils;
+import com.github.khangnt.youtubecrawler.internal.SignatureHolder;
 import com.github.khangnt.youtubecrawler.internal.UriUtil;
 import com.github.khangnt.youtubecrawler.internal.Utils;
 import com.github.khangnt.youtubecrawler.model.ExtractorResult;
@@ -17,6 +18,8 @@ import com.github.khangnt.youtubecrawler.model.youtube.format.FormatUtils;
 import com.github.khangnt.youtubecrawler.model.youtube.format.NonDash;
 import com.github.khangnt.youtubecrawler.model.youtube.format.YouTubeFormat;
 import com.github.khangnt.youtubecrawler.model.youtube.stream.DashManifestInfo;
+import com.github.khangnt.youtubecrawler.model.youtube.stream.Range;
+import com.github.khangnt.youtubecrawler.model.youtube.stream.SegmentBaseData;
 import com.github.khangnt.youtubecrawler.model.youtube.stream.Subtitle;
 import com.github.khangnt.youtubecrawler.model.youtube.stream.UrlLazy;
 import com.github.khangnt.youtubecrawler.model.youtube.stream.YouTubeDashAudioStream;
@@ -42,11 +45,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.regex.Matcher;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -122,25 +123,53 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
             String url;
             String videoWebPage;
             String videoInfoWebPage;
-            String playerUrl = null;
             boolean isLive = false;
             DashManifestInfo dashManifestInfo = null;
             String embedWebpage = null;
             String sts = null;
             Map ytPlayerConfig;
             Map<String, List<String>> videoInfo = null;
-            Set<String> dashMpds = new LinkedHashSet<>();
+            Map<String, UrlLazy> dashMpds = new HashMap<>();
 
             Map<String, YouTubeStream> streams = new HashMap<>();
             try {
                 url = "https://www.youtube.com/watch?&gl=US&hl=en&has_verified=1&bpctr=9999999999&v=" + vid;
                 videoWebPage = blockingDownload(url, true, "Failed to download video web page");
 
-                // Attempt to extract SWF player URL
+                String playerUrl = null;
+                // parse player Url
                 matcher = search("swfConfig.*?\"(https?:\\\\/\\\\/.*?watch.*?-.*?\\.swf)\"", videoWebPage);
                 if (matcher != null) {
                     playerUrl = sub("\\\\(.)", "$1", matcher.group(1));
                 }
+                String assetsRegex = "\"assets\":.+?\"js\":\\s*(\"[^\"]+\")";
+                matcher = search(assetsRegex, videoWebPage);
+                if (matcher == null) {
+                    if (embedWebpage == null) {
+                        embedWebpage = blockingDownload("https://www.youtube.com/embed/" + vid,
+                                true, "Download embed web page failed");
+                    }
+                    matcher = search(assetsRegex, embedWebpage);
+                }
+
+                if (matcher != null) {
+                    JsonElement playerUrlJson = null;
+                    try {
+                        playerUrlJson = gson.fromJson(matcher.group(1), JsonElement.class);
+                    } catch (Throwable ignore) {
+                    }
+                    if (playerUrlJson instanceof JsonPrimitive) {
+                        playerUrl = playerUrlJson.getAsString();
+                    }
+                }
+                final SignatureHolder signatureHolder;
+                if (playerUrl != null) {
+                    signatureHolder = new SignatureHolder(signatureDecipher, vid, playerUrl);
+                } else {
+                    signatureHolder = null;
+                }
+
+
                 if (search("player-age-gate-content\">", videoWebPage) != null) {
                     emitter.onError(new AgeRestrictionException("Login to view age gate content", vid));
                     return;
@@ -158,7 +187,8 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                         }
                         List<String> dashMpd = videoInfo.get("dashmpd");
                         if (!isEmpty(dashMpd)) {
-                            dashMpds.add(dashMpd.get(0));
+                            String originUrl = dashMpd.get(0);
+                            dashMpds.put(originUrl, getMpdUrlLazy(originUrl, signatureHolder, vid));
                         }
                     }
                     if (videoInfo == null && args.get("ypc_vid") != null) {
@@ -189,10 +219,12 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                     videoInfoWebPage = blockingDownload(urlBuilder.build().toString(), false, null);
                     if (isEmpty(videoInfoWebPage)) continue;
                     Map<String, List<String>> getVideoInfo = splitQuery(videoInfoWebPage);
-                    List<String> dashMpd = getVideoInfo.get("dashmpd");
-                    if (dashMpd != null && !dashMpd.isEmpty()) {
-                        dashMpds.add(dashMpd.get(0));
+
+                    if (!isEmpty(getVideoInfo.get("dashmpd"))) {
+                        String originUrl = getVideoInfo.get("dashmpd").get(0);
+                        dashMpds.put(originUrl, getMpdUrlLazy(originUrl, signatureHolder, vid));
                     }
+
                     if (videoInfo == null) {
                         videoInfo = getVideoInfo;
                     }
@@ -243,62 +275,57 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                         emitter.onError(new NotSupportedVideoException("RTMP video not supported.", vid));
                         return;
                     }
+
                     String[] stringSplit = encodedUrlMap.split(",");
+                    List<Map<String, List<String>>> urlDataList = new ArrayList<>();
                     for (String urlDataStr : stringSplit) {
                         Map<String, List<String>> urlData = splitQuery(urlDataStr);
                         if (isEmpty(urlData.get("itag")) || isEmpty(urlData.get("url"))) {
                             continue;
                         }
+                        urlDataList.add(urlData);
+                        if (!isEmpty(urlData.get("s"))) {
+                            if (signatureHolder == null) {
+                                throw new BadExtractorException("playerUrl == null or empty", vid);
+                            } else {
+                                signatureHolder.addEncryptedSignature(urlData.get("s").get(0));
+                            }
+                        }
+                    }
+
+                    for (Map<String, List<String>> urlData : urlDataList) {
                         String itag = urlData.get("itag").get(0);
-
                         url = urlData.get("url").get(0);
-                        String assetsRegex = "\"assets\":.+?\"js\":\\s*(\"[^\"]+\")";
-                        matcher = search(assetsRegex, videoWebPage);
-                        if (matcher == null) {
-                            if (embedWebpage == null) {
-                                embedWebpage = blockingDownload("https://www.youtube.com/embed/" + vid,
-                                        true, "Download embed web page failed");
-                            }
-                            matcher = search(assetsRegex, embedWebpage);
-                        }
-
-                        if (matcher != null) {
-                            JsonElement playerUrlJson = null;
-                            try {
-                                playerUrlJson = gson.fromJson(matcher.group(1), JsonElement.class);
-                            } catch (Throwable ignore) {
-                            }
-                            if (playerUrlJson instanceof JsonPrimitive) {
-                                playerUrl = playerUrlJson.getAsString();
-                            }
-                        }
 
                         if (!url.contains("ratebypass")) {
                             url += "&ratebypass=yes";
                         }
 
                         UrlLazy urlLazy;
-                        final String playerUrlFinal = playerUrl;
-                        final String urlFinal = url;
-                        if (urlData.containsKey("sig")) {
-                            urlLazy = new UrlLazy(() -> urlFinal + "&signature=" + urlData.get("sig").get(0));
+                        final String finalUrl = url;
+                        if (!isEmpty(urlData.get("sig"))) {
+                            urlLazy = new UrlLazy(() -> finalUrl + "&signature=" + urlData.get("sig").get(0));
                         } else if (urlData.containsKey("s")) {
-                            if (playerUrl == null) {
-                                emitter.onError(new BadExtractorException("Player url not found", vid));
-                                return;
-                            }
                             String encryptedSig = urlData.get("s").get(0);
                             urlLazy = new UrlLazy(() -> {
-                                String sig = signatureDecipher.decrypt(vid, playerUrlFinal, encryptedSig);
-                                return urlFinal + "&signature=" + sig;
+                                String sig = signatureHolder.getDecryptSignature(encryptedSig);
+                                return finalUrl + "&signature=" + sig;
                             });
                         } else {
-                            urlLazy = new UrlLazy(() -> urlFinal);
+                            urlLazy = new UrlLazy(() -> finalUrl);
                         }
-
+                        SegmentBaseData segmentBase = null;
                         long expiresAt = parseExpires(url, Const.UNKNOWN_VALUE);
                         String[] typeSplit = urlData.get("type").get(0).split(";");
                         String mimeType = typeSplit[0].trim();
+                        if (!isEmpty(urlData.get("init")) && !isEmpty(urlData.get("index"))) {
+                            String[] init = urlData.get("init").get(0).split("-");
+                            String[] index = urlData.get("index").get(0).split("-");
+                            Range initRange = new Range(safeParse(init[0], 0), safeParse(init[1], 0));
+                            Range indexRange = new Range(safeParse(index[0], initRange.getEnd() + 1),
+                                    safeParse(index[1], initRange.getEnd() + 1025));
+                            segmentBase = new SegmentBaseData(indexRange, initRange);
+                        }
 
                         if (mimeType.startsWith("audio")) {
                             // dash audio
@@ -325,7 +352,8 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                             }
                             int contentLength = parseContentLength(url);
                             streams.put(itag, new YouTubeDashAudioStream(urlLazy, expiresAt, itag,
-                                    container, mimeType, bitrate, contentLength, audioCodec, Const.UNKNOWN_VALUE));
+                                    container, mimeType, bitrate, contentLength, segmentBase,
+                                    audioCodec, Const.UNKNOWN_VALUE));
                         } else if (mimeType.startsWith("video")) {
                             YouTubeFormat format = FormatUtils.findByItag(itag);
                             if (format instanceof DashVideoOnly) {
@@ -346,7 +374,8 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                                 }
                                 int contentLength = parseContentLength(url);
                                 streams.put(itag, new YouTubeDashVideoStream(urlLazy, expiresAt, itag,
-                                        container, mimeType, bitrate, contentLength, width, height, videoCodec, fps));
+                                        container, mimeType, bitrate, contentLength, segmentBase,
+                                        width, height, videoCodec, fps));
                             } else if (format instanceof NonDash) {
                                 NonDash nonDash = ((NonDash) format);
                                 streams.put(itag, new YouTubeNonDashStream(urlLazy, expiresAt, itag,
@@ -369,20 +398,13 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                     return;
                 }
 
-                if (!isEmpty(playerUrl)) {
-                    final String playerUrlFinal = playerUrl;
+                if (!dashMpds.isEmpty()) {
                     // Look for the DASH manifest
                     Map<String, YouTubeStream> formats = new HashMap<>();
-                    for (String mpdUrl : dashMpds) {
+                    for (UrlLazy mpdUrl : dashMpds.values()) {
                         try {
-                            mpdUrl = RegexUtils.sub("/s/([a-fA-F0-9\\.]+)", mpdUrl, matcher1 -> {
-                                String encryptedSig = matcher1.group(1);
-                                String sig = signatureDecipher.decrypt(vid, playerUrlFinal, encryptedSig);
-                                return "/signature/" + sig;
-                            });
-
                             DashManifestInfo.Builder dashManifestInfoBuilder = DashManifestInfo.builder();
-                            List<YouTubeStream> dashStreams = extractMpdFormats(mpdUrl, vid, formats.isEmpty(),
+                            List<YouTubeStream> dashStreams = extractMpdFormats(mpdUrl.get(), vid, formats.isEmpty(),
                                     dashManifestInfoBuilder);
                             if (dashManifestInfo == null) {
                                 dashManifestInfo = dashManifestInfoBuilder.build();
@@ -418,6 +440,23 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                 emitter.onError(anyError);
             }
         }, Emitter.BackpressureMode.NONE);
+    }
+
+    private UrlLazy getMpdUrlLazy(String originUrl, SignatureHolder signatureHolder, String vid) {
+        Matcher matcher = search("/s/([a-fA-F0-9\\.]+)", originUrl);
+        if (matcher != null) {
+            if (signatureHolder == null) {
+                throw new BadExtractorException("playerUrl == null or empty", vid);
+            }
+            String encryptedSignature = matcher.group(1);
+            String entireMatch = matcher.group(0);
+            signatureHolder.addEncryptedSignature(encryptedSignature);
+            return new UrlLazy(() -> {
+                String sig = signatureHolder.getDecryptSignature(encryptedSignature);
+                return originUrl.replace(entireMatch, "/signature/" + sig);
+            });
+        }
+        return new UrlLazy(() -> originUrl);
     }
 
     @Nullable
@@ -644,6 +683,23 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
         return result;
     }
 
+    private static SegmentBaseData parseSegmentBaseIfExists(Element representation) {
+        NodeList nodeList = representation.getElementsByTagName("SegmentBase");
+        if (nodeList != null && nodeList.getLength() > 0) {
+            Element segmentBaseElement = ((Element) nodeList.item(0));
+            String indexRangeString = segmentBaseElement.getAttribute("indexRange");
+            NodeList initialization = segmentBaseElement.getElementsByTagName("Initialization");
+            String initRangeString = ((Element) initialization.item(0)).getAttribute("range");
+            String[] init = initRangeString.split("-");
+            String[] index = indexRangeString.split("-");
+            Range initRange = new Range(safeParse(init[0], 0), safeParse(init[1], 0));
+            Range indexRange = new Range(safeParse(index[0], initRange.getEnd() + 1),
+                    safeParse(index[1], initRange.getEnd() + 1025));
+            return new SegmentBaseData(indexRange, initRange);
+        }
+        return null;
+    }
+
     @Nullable
     private static YouTubeDashAudioStream parseAudioRepresentation(Node node, String mimeType,
                                                                    String baseUrl) {
@@ -654,12 +710,13 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
             return null;
         }
         int contentLength = parseContentLength(url);
+        SegmentBaseData segmentBase = parseSegmentBaseIfExists(representation);
         String codec = representation.getAttribute("codecs");
         int bandwidth = safeParse(representation.getAttribute("bandwidth"), Const.UNKNOWN_VALUE);
         int channelCount = getAudioChannelCount(representation);
         long expireAt = parseExpires(url, Const.UNKNOWN_VALUE);
         return new YouTubeDashAudioStream(new UrlLazy(() -> url), expireAt, itag, mime2ext(mimeType),
-                mimeType, bandwidth, contentLength, codec, channelCount);
+                mimeType, bandwidth, contentLength, segmentBase, codec, channelCount);
     }
 
     private static int getAudioChannelCount(Element audioRepresentationElement) {
@@ -681,6 +738,7 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
             return null;
         }
         int contentLength = parseContentLength(url);
+        SegmentBaseData segmentBase = parseSegmentBaseIfExists(representation);
         String codec = representation.getAttribute("codecs");
         int width = safeParse(representation.getAttribute("width"), Const.UNKNOWN_VALUE);
         int height = safeParse(representation.getAttribute("height"), Const.UNKNOWN_VALUE);
@@ -688,7 +746,7 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
         int fps = safeParse(representation.getAttribute("frameRate"), Const.UNKNOWN_VALUE);
         long expireAt = parseExpires(url, Const.UNKNOWN_VALUE);
         return new YouTubeDashVideoStream(new UrlLazy(() -> url), expireAt, itag, mime2ext(mimeType),
-                mimeType, bandwidth, contentLength, width, height, codec, fps);
+                mimeType, bandwidth, contentLength, segmentBase, width, height, codec, fps);
     }
 
     /**

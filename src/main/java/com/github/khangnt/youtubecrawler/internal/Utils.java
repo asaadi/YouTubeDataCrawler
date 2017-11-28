@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -283,6 +284,16 @@ public class Utils {
 
     public static int compare(int var0, int var1) {
         return var0 < var1?-1:(var0 == var1?0:1);
+    }
+
+    public static String join(Collection<String> list, String delimiter) {
+        if (isEmpty(list)) return "";
+        Iterator<String> iterator = list.iterator();
+        StringBuilder res = new StringBuilder(iterator.next());
+        while (iterator.hasNext()) {
+            res.append(delimiter).append(iterator.next());
+        }
+        return res.toString();
     }
 
 }
