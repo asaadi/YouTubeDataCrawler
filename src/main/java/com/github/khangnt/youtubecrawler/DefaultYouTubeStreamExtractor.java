@@ -3,6 +3,7 @@ package com.github.khangnt.youtubecrawler;
 import com.github.khangnt.youtubecrawler.exception.AgeRestrictionException;
 import com.github.khangnt.youtubecrawler.exception.BadExtractorException;
 import com.github.khangnt.youtubecrawler.exception.HttpClientException;
+import com.github.khangnt.youtubecrawler.exception.NotSupportedDashDynamicException;
 import com.github.khangnt.youtubecrawler.exception.NotSupportedVideoException;
 import com.github.khangnt.youtubecrawler.exception.VideoNotAvailableException;
 import com.github.khangnt.youtubecrawler.internal.NaturalDeserializer;
@@ -391,8 +392,8 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                         return;
                     }
                     String manifestUrl = videoInfo.get("hlsvp").get(0);
-                    YouTubeLiveStream stream = new YouTubeLiveStream(manifestUrl);
-                    streams.put(stream.getItag(), stream);
+                    YouTubeLiveStream stream = new YouTubeLiveStream(manifestUrl, YouTubeLiveStream.Type.HLS);
+                    streams.put("live_hls", stream);
                 } else {
                     emitter.onError(new BadExtractorException("no conn, hlsvp or url_encoded_fmt_stream_map information found in video info", vid));
                     return;
@@ -402,22 +403,27 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                     // Look for the DASH manifest
                     Map<String, YouTubeStream> formats = new HashMap<>();
                     for (UrlLazy mpdUrl : dashMpds.values()) {
-                        try {
-                            DashManifestInfo.Builder dashManifestInfoBuilder = DashManifestInfo.builder();
-                            List<YouTubeStream> dashStreams = extractMpdFormats(mpdUrl.get(), vid, formats.isEmpty(),
-                                    dashManifestInfoBuilder);
-                            if (dashManifestInfo == null) {
-                                dashManifestInfo = dashManifestInfoBuilder.build();
-                            }
-                            for (YouTubeStream stream : dashStreams) {
-                                // Do not overwrite DASH format found in some previous DASH manifest
-                                if (!formats.containsKey(stream.getItag())) {
-                                    formats.put(stream.getItag(), stream);
+                        if (isLive && !streams.containsKey("live_dash")) {
+                            YouTubeLiveStream liveStream = new YouTubeLiveStream(mpdUrl.get(), YouTubeLiveStream.Type.DASH);
+                            streams.put("live_dash", liveStream);
+                        } else {
+                            try {
+                                DashManifestInfo.Builder dashManifestInfoBuilder = DashManifestInfo.builder();
+                                List<YouTubeStream> dashStreams = extractMpdFormats(mpdUrl.get(), vid, formats.isEmpty(),
+                                        dashManifestInfoBuilder);
+                                if (dashManifestInfo == null) {
+                                    dashManifestInfo = dashManifestInfoBuilder.build();
                                 }
+                                for (YouTubeStream stream : dashStreams) {
+                                    // Do not overwrite DASH format found in some previous DASH manifest
+                                    if (!formats.containsKey(stream.getItag())) {
+                                        formats.put(stream.getItag(), stream);
+                                    }
+                                }
+                            } catch (Exception e) {
+                                // skip dash manifest
+                                e.printStackTrace();
                             }
-                        } catch (Exception e) {
-                            // skip dash manifest
-                            e.printStackTrace();
                         }
                     }
                     // Override the formats we found through non-DASH
@@ -584,10 +590,9 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                 builder.setUrl(baseUrl).setContent(manifestXml);
 
                 Document document = parseDoc(manifestXml);
-                document.normalizeDocument();
                 if (!isStaticDash(document)) {
                     // live stream, only download dash manifest
-                    return Collections.emptyList();
+                    exception = new NotSupportedDashDynamicException("Not supported parse live DASH manifest", videoId);
                 } else {
                     List<YouTubeStream> result = new ArrayList<>();
                     NodeList adaptationSet = document.getElementsByTagName("AdaptationSet");

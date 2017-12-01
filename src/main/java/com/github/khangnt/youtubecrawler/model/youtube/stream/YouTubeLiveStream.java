@@ -8,8 +8,36 @@ import com.github.khangnt.youtubecrawler.Const;
  */
 
 public class YouTubeLiveStream extends YouTubeStream {
-    public YouTubeLiveStream(String manifestUrl) {
-        super(new UrlLazy(() -> manifestUrl), Const.UNKNOWN_VALUE, "-1", "m3u8",
+    public enum Type {
+        HLS {
+            @Override
+            public String toString() {
+                return "m3u8";
+            }
+        }, DASH {
+            @Override
+            public String toString() {
+                return "mpd";
+            }
+        }
+    }
+
+    private Type type;
+
+    public YouTubeLiveStream(String manifestUrl, Type type) {
+        super(new UrlLazy(() -> manifestUrl), Const.UNKNOWN_VALUE, "-1", type.toString(),
                 "application/vnd.apple.mpegurl");
+        this.type = type;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    @Override
+    public String toString() {
+        return "YouTubeLiveStream{" +
+                "type=" + type +
+                "} " + super.toString();
     }
 }
