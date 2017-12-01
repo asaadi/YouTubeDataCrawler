@@ -3,7 +3,6 @@ package com.github.khangnt.youtubecrawler;
 import com.github.khangnt.youtubecrawler.exception.AgeRestrictionException;
 import com.github.khangnt.youtubecrawler.exception.BadExtractorException;
 import com.github.khangnt.youtubecrawler.exception.HttpClientException;
-import com.github.khangnt.youtubecrawler.exception.NotSupportedDashDynamicException;
 import com.github.khangnt.youtubecrawler.exception.NotSupportedVideoException;
 import com.github.khangnt.youtubecrawler.exception.VideoNotAvailableException;
 import com.github.khangnt.youtubecrawler.internal.NaturalDeserializer;
@@ -425,7 +424,7 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                     streams.putAll(formats);
                 }
 
-                if (options != null && options.isMarkWatched()) {
+                if (!isLive && options != null && options.isMarkWatched()) {
                     markWatched(vid, videoInfo);
                 }
 
@@ -587,7 +586,8 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
                 Document document = parseDoc(manifestXml);
                 document.normalizeDocument();
                 if (!isStaticDash(document)) {
-                    exception = new NotSupportedDashDynamicException("Not supported live DASH", videoId);
+                    // live stream, only download dash manifest
+                    return Collections.emptyList();
                 } else {
                     List<YouTubeStream> result = new ArrayList<>();
                     NodeList adaptationSet = document.getElementsByTagName("AdaptationSet");
