@@ -256,9 +256,9 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
 
                 Lazy<List<Subtitle>> subtitleListLazy = new Lazy<>(() -> {
                     List<Subtitle> subtitles = new ArrayList<>();
-                    subtitles.addAll(getSubtitles(vid, videoWebPage));
+                    subtitles.addAll(getSubtitles(vid));
                     if (ytPlayerConfig != null) {
-                        subtitles.addAll(getAutomaticCaptions(vid, videoWebPage, ytPlayerConfig));
+                        subtitles.addAll(getAutomaticCaptions(ytPlayerConfig));
                     }
                     return subtitles;
                 });
@@ -511,7 +511,7 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
         return docBuilder.parse(new ByteArrayInputStream(xml.getBytes()));
     }
 
-    private List<Subtitle> getSubtitles(String videoId, String webPage) {
+    private List<Subtitle> getSubtitles(String videoId) {
         List<Subtitle> subtitles = new ArrayList<>();
         Document document = blockingDownloadXml("https://video.google.com/timedtext?hl=en&type=list&v=" + videoId,
                 false, null);
@@ -539,8 +539,7 @@ public class DefaultYouTubeStreamExtractor implements YouTubeStreamExtractor {
         return subtitles;
     }
 
-    private List<Subtitle> getAutomaticCaptions(String videoId, String webPage,
-                                                @NotNull Map player_config) {
+    private List<Subtitle> getAutomaticCaptions(@NotNull Map player_config) {
         Map args = (Map) player_config.get("args");
         String captionUrl = args.get("ttsurl") != null ? args.get("ttsurl").toString() : null;
         List<Subtitle> subtitles = new ArrayList<>();

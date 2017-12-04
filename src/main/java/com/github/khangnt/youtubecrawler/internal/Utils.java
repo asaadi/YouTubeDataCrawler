@@ -296,4 +296,12 @@ public class Utils {
         return res.toString();
     }
 
+    public static RuntimeException propagate(Throwable throwable) {
+        if (throwable instanceof RuntimeException) {
+            throw ((RuntimeException) throwable);
+        } else {
+            throw new RuntimeException(throwable);
+        }
+    }
+
 }
