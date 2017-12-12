@@ -52,11 +52,18 @@ import static com.github.khangnt.youtubecrawler.internal.Utils.string;
 public class YouTubeData {
     private static final String HOME_PAGE_URL = "https://m.youtube.com/";
     private static final String HOME_FEED_ENTRY_URL = "https://m.youtube.com/feed?ajax=1&layout=tablet&tsp=1&utcoffset=" + C.UTC_OFFSET;
+
     private static final String TRENDING_PAGE_URL = "https://m.youtube.com/feed/trending";
     private static final String TRENDING_FEED_ENTRY_URL = "https://m.youtube.com/feed/trending?ajax=1&&layout=tablet&tsp=1&utcoffset=" + C.UTC_OFFSET;
+
+    private static final String RECOMMENDED_PAGE_URL = "https://m.youtube.com/feed/recommended";
+    private static final String RECOMMENDED_FEED_ENTRY_URL = "https://m.youtube.com/feed/recommended?ajax=1&&layout=tablet&tsp=1&utcoffset=" + C.UTC_OFFSET;
+
     private static final String SEARCH_RESULT_PAGE_URL = "https://m.youtube.com/results"; // ?search_query=...
     private static final String SEARCH_RESULT_AJAX_URL = "https://m.youtube.com/results?ajax=1&layout=tablet&utcoffset=" + C.UTC_OFFSET;
+
     private static final String SEARCH_QUERY = "search_query";
+
     private static final String CHANNEL_HOME_PAGE_URL = "https://m.youtube.com/channel"; // /channel_id
 
     private static final String ACTION_CONTINUATION_PARAM = "action_continuation";
@@ -94,6 +101,13 @@ public class YouTubeData {
         return getWindowSettings(TRENDING_PAGE_URL)
                 .flatMap(windowSettings -> handleAjaxRequest(TRENDING_FEED_ENTRY_URL,
                         TRENDING_PAGE_URL, windowSettings, FeedResponse.class));
+
+    }
+
+    public Observable<ResponseData<FeedResponse>> recommendedFeed() {
+        return getWindowSettings(RECOMMENDED_PAGE_URL)
+                .flatMap(windowSettings -> handleAjaxRequest(RECOMMENDED_FEED_ENTRY_URL,
+                        RECOMMENDED_PAGE_URL, windowSettings, FeedResponse.class));
 
     }
 
