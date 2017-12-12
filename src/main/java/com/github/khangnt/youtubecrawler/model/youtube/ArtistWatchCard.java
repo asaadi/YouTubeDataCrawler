@@ -18,7 +18,7 @@ import static com.github.khangnt.youtubecrawler.model.youtube.TypeAdapterUtils.s
  * Email: khang.neon.1997@gmail.com
  */
 
-public class ArtistWatchCard extends Content {
+public class ArtistWatchCard extends MultipleItemContent {
     static final String ITEM_TYPE = "artist_watch_card";
 
     private String title;
@@ -29,12 +29,11 @@ public class ArtistWatchCard extends Content {
     private String relatedDataTitle;
     private List<Artist> relatedData;
     private String channelEndpoint;
-    private List<Content> lists;
 
     public ArtistWatchCard(String title, String subtitle, String thumbnailUrl, String callToAction,
                            String callToActionEndpoint, String relatedDataTitle,
                            List<Artist> relatedData, String channelEndpoint, List<Content> lists) {
-        super(ITEM_TYPE);
+        super(ITEM_TYPE, lists);
         this.title = title;
         this.subtitle = subtitle;
         this.thumbnailUrl = thumbnailUrl;
@@ -43,7 +42,6 @@ public class ArtistWatchCard extends Content {
         this.relatedDataTitle = relatedDataTitle;
         this.relatedData = relatedData;
         this.channelEndpoint = channelEndpoint;
-        this.lists = lists;
     }
 
     public String getTitle() {
@@ -76,10 +74,6 @@ public class ArtistWatchCard extends Content {
 
     public String getChannelEndpoint() {
         return channelEndpoint;
-    }
-
-    public List<Content> getLists() {
-        return lists;
     }
 
     public static final class TypeAdapter implements JsonDeserializer<ArtistWatchCard> {

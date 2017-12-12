@@ -32,9 +32,9 @@ public class CompactVideo extends Content {
     private String videoId;
     private String endpoint;
 
-    public CompactVideo(String title, String channelTitle, String lengthText, String viewCountText,
+    public CompactVideo(String itemType, String title, String channelTitle, String lengthText, String viewCountText,
                         String thumbnailUrl, String liveBadge, String videoId, String endpoint) {
-        super(ITEM_TYPE);
+        super(itemType);
         this.title = title;
         this.channelTitle = channelTitle;
         this.lengthText = lengthText;
@@ -43,6 +43,11 @@ public class CompactVideo extends Content {
         this.liveBadge = liveBadge;
         this.videoId = videoId;
         this.endpoint = endpoint;
+    }
+
+    public CompactVideo(String title, String channelTitle, String lengthText, String viewCountText,
+                        String thumbnailUrl, String liveBadge, String videoId, String endpoint) {
+        this(ITEM_TYPE, title, channelTitle, lengthText, viewCountText, thumbnailUrl, liveBadge, videoId, endpoint);
     }
 
     public String getChannelTitle() {

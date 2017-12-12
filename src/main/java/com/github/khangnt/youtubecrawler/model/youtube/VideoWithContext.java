@@ -15,46 +15,20 @@ import static com.github.khangnt.youtubecrawler.model.youtube.TypeAdapterUtils.p
  * Email: khang.neon.1997@gmail.com
  */
 
-public class VideoWithContext extends Content {
+public class VideoWithContext extends CompactVideo {
     static final String ITEM_TYPE = "video_with_context";
 
-    private String title;
-    private String bylineText;
-    private String viewCountText;
-    private String lengthText;
     private String publishedTimeText;
     private String channelThumbnailUrl;
-    private String thumbnailUrl;
-    private String videoId;
-    private String endpoint;
     private String channelEndpoint;
 
     public VideoWithContext(String title, String bylineText, String viewCountText, String lengthText,
                             String publishedTimeText, String channelThumbnailUrl, String thumbnailUrl,
                             String videoId, String endpoint, String channelEndpoint) {
-        super(ITEM_TYPE);
-        this.title = title;
-        this.bylineText = bylineText;
-        this.viewCountText = viewCountText;
-        this.lengthText = lengthText;
+        super(ITEM_TYPE, title, bylineText, lengthText, viewCountText, thumbnailUrl, null, videoId, endpoint);
         this.publishedTimeText = publishedTimeText;
         this.channelThumbnailUrl = channelThumbnailUrl;
-        this.thumbnailUrl = thumbnailUrl;
-        this.videoId = videoId;
-        this.endpoint = endpoint;
         this.channelEndpoint = channelEndpoint;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public String getBylineText() {
-        return bylineText;
-    }
-
-    public String getViewCountText() {
-        return viewCountText;
     }
 
     public String getPublishedTimeText() {
@@ -63,22 +37,6 @@ public class VideoWithContext extends Content {
 
     public String getChannelThumbnailUrl() {
         return channelThumbnailUrl;
-    }
-
-    public String getThumbnailUrl() {
-        return thumbnailUrl;
-    }
-
-    public String getVideoId() {
-        return videoId;
-    }
-
-    public String getEndpoint() {
-        return endpoint;
-    }
-
-    public String getLengthText() {
-        return lengthText;
     }
 
     public String getChannelEndpoint() {
