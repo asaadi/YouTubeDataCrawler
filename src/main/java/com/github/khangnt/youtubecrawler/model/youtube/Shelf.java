@@ -45,6 +45,7 @@ public class Shelf extends NestedContent {
         return title;
     }
 
+    @Nullable
     public String getEndpoint() {
         return endpoint;
     }
@@ -68,7 +69,7 @@ public class Shelf extends NestedContent {
                 String title = parseFormattedString(jsonObj.getAsJsonObject("title"));
                 String subtitle = parseFormattedString(jsonObj.getAsJsonObject("subtitle"));
                 String titleAnnotation = parseFormattedString(jsonObj.getAsJsonObject("title_annotation"));
-                String endpoint = jsonObj.getAsJsonObject("endpoint").get("url").getAsString();
+                String endpoint = safeGet(jsonObj.getAsJsonObject("endpoint"), "url", (String) null);
                 String thumbnail = safeGet(jsonObj.getAsJsonObject("thumbnail"), "url", (String) null);
                 Content subContent = TypeAdapterUtils.parse(jsonObj.getAsJsonObject("content"), context);
                 return new Shelf(subContent, thumbnail, title, subtitle, titleAnnotation, endpoint);
