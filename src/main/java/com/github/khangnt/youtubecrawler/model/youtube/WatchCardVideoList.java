@@ -11,6 +11,7 @@ import java.util.List;
 
 import static com.github.khangnt.youtubecrawler.model.youtube.TypeAdapterUtils.parse;
 import static com.github.khangnt.youtubecrawler.model.youtube.TypeAdapterUtils.parseFormattedString;
+import static com.github.khangnt.youtubecrawler.model.youtube.TypeAdapterUtils.safeGet;
 
 /**
  * Created by Khang NT on 10/30/17.
@@ -51,8 +52,11 @@ public class WatchCardVideoList extends Content {
             if (json instanceof JsonObject) {
                 JsonObject jsonObj = ((JsonObject) json);
                 String title = parseFormattedString(jsonObj.get("title"));
-                String endpoint = jsonObj.getAsJsonObject("view_all_endpoint").get("url").getAsString();
+                String endpoint = safeGet(jsonObj.getAsJsonObject("view_all_endpoint"), "url", (String) null);
                 List<Video> videoList = parse(jsonObj.getAsJsonArray("videos"), Video::new);
+                if (endpoint == null && !videoList.isEmpty()) {
+                    endpoint = videoList.get(0).getEndpoint();
+                }
                 return new WatchCardVideoList(title, endpoint, videoList);
             } else {
                 throw new JsonParseException("Invalid WatchCardVideoList");
