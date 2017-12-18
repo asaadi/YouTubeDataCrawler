@@ -62,7 +62,7 @@ class TypeAdapterUtils {
         }
         Class<? extends Content> contentClass = ITEM_TYPE_MAP.get(itemType);
         if (contentClass == null) {
-            throw new JsonParseException("Unknown item_type: " + itemType);
+            return new Content(itemType); // return dummy content, avoid NPE
         }
         return context.deserialize(jsonObj, contentClass);
     }
