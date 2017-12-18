@@ -181,6 +181,7 @@ public class YouTubeData {
 
         public Builder() {
             this(new OkHttpClient.Builder()
+                    .retryOnConnectionFailure(true)
                     .connectTimeout(30, TimeUnit.SECONDS)
                     .readTimeout(30, TimeUnit.SECONDS)
                     .writeTimeout(30, TimeUnit.SECONDS));
