@@ -9,7 +9,6 @@ import com.google.gson.Gson;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Collection;
@@ -74,32 +73,27 @@ public class Utils {
                 .addHeader(HTTP_USER_AGENT, C.DESKTOP_BROWSER_USER_AGENT);
     }
 
-    public static Observable<Response> rx(Call call) {
+    public static <R> Observable<R> rx(Call call, Consumer<Response, R> responseConsumer) {
         return Observable.create(emitter -> {
+            Response response = null;
             try {
-                Response response = call.execute();
-                emitter.onNext(response);
+                response = call.execute();
+                emitter.onNext(responseConsumer.call(response));
                 emitter.onCompleted();
-            } catch (IOException ex) {
+            } catch (Exception ex) {
                 emitter.onError(ex);
+            } finally {
+                closeQuietly(response);
             }
         }, Emitter.BackpressureMode.NONE);
     }
 
-    public static Func1<Observable<Response>, Observable<String>> string() {
-        return responseObservable -> responseObservable.flatMap(response -> {
-            try {
-                if (response.code() / 100 == 2) {
-                    //noinspection ConstantConditions
-                    return Observable.just(response.body().string());
-                } else {
-                    return Observable.error(
-                            new HttpClientException(response.code(), response.message()));
-                }
-            } catch (IOException e) {
-                return Observable.error(e);
-            } finally {
-                closeQuietly(response);
+    public static Observable<String> rx(Call call) {
+        return rx(call, response -> {
+            if (response.code() / 100 == 2) {
+                return response.body().string();
+            } else {
+                throw new HttpClientException(response.code(), response.message());
             }
         });
     }

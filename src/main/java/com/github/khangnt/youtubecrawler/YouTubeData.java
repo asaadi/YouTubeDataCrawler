@@ -43,7 +43,6 @@ import static com.github.khangnt.youtubecrawler.internal.Utils.mobileWebPageDown
 import static com.github.khangnt.youtubecrawler.internal.Utils.parseAjaxResponse;
 import static com.github.khangnt.youtubecrawler.internal.Utils.parseWindowSettings;
 import static com.github.khangnt.youtubecrawler.internal.Utils.rx;
-import static com.github.khangnt.youtubecrawler.internal.Utils.string;
 
 /**
  * Created by Khang NT on 10/24/17.
@@ -147,7 +146,6 @@ public class YouTubeData {
     private Observable<WindowSettings> getWindowSettings(String webPageUrl) {
         Request.Builder webPageReqBuilder = mobileWebPageDownloadRequestBuilder(webPageUrl);
         return rx(getOkHttpClient().newCall(webPageReqBuilder.build()))
-                .to(string())
                 .flatMap(parseWindowSettings(getGson()));
     }
 
@@ -155,7 +153,6 @@ public class YouTubeData {
             String ajaxUrl, String referer, WindowSettings windowSettings, Class<T> tClass) {
         Request request = Utils.createAjaxRequest(ajaxUrl, referer, windowSettings);
         return rx(getOkHttpClient().newCall(request))
-                .to(string())
                 .map(parseAjaxResponse(getGson(), tClass))
                 .map(response -> createResponseData(response, ajaxUrl, referer, windowSettings, tClass));
     }
